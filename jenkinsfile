@@ -5,7 +5,8 @@ pipeline {
 
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/Seshaveni123/FakeProfileDetector.git'
+                git branch: 'main',
+                url: 'https://github.com/Seshaveni123/FakeProfileDetector.git'
             }
         }
 
