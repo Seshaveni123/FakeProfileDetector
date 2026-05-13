@@ -386,7 +386,7 @@ python -m pytest tests/ -v
 
 ## 👨‍💻 Author
 
-**Mukund** — B.Tech CSE
+**Seshaveni** — B.Tech CSE
 
 ---
 
