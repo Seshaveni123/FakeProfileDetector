@@ -12,25 +12,25 @@ pipeline {
 
         stage('Build Backend Image') {
             steps {
-                bat 'docker build -t seshaveni1/fakeguard-backend ./backend'
+                sh 'docker build -t seshaveni1/fakeguard-backend ./backend'
             }
         }
 
         stage('Build Frontend Image') {
             steps {
-                bat 'docker build -t seshaveni1/fakeguard-frontend ./frontend'
+                sh 'docker build -t seshaveni1/fakeguard-frontend ./frontend'
             }
         }
 
         stage('Push Backend Image') {
             steps {
-                bat 'docker push seshaveni1/fakeguard-backend'
+                sh 'docker push seshaveni1/fakeguard-backend'
             }
         }
 
         stage('Push Frontend Image') {
             steps {
-                bat 'docker push seshaveni1/fakeguard-frontend'
+                sh 'docker push seshaveni1/fakeguard-frontend'
             }
         }
     }
