@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# Data & Models (regenerated)
+data/*.csv
+models/*.pkl
+models/*.json
+backend/predictions.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log

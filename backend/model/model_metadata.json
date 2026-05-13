@@ -1,0 +1,92 @@
+{
+  "best_model": "Logistic Regression",
+  "feature_columns": [
+    "followers_count",
+    "following_count",
+    "followers_following_ratio",
+    "account_age_days",
+    "bio_length",
+    "has_profile_pic",
+    "posts_per_day",
+    "avg_likes",
+    "avg_comments",
+    "hashtags_per_post",
+    "has_url_in_bio",
+    "posting_regularity",
+    "content_repetition_score",
+    "engagement_consistency"
+  ],
+  "feature_names_display": [
+    "Followers Count",
+    "Following Count",
+    "Followers/Following Ratio",
+    "Account Age (days)",
+    "Bio Length",
+    "Has Profile Picture",
+    "Posts Per Day",
+    "Avg Likes",
+    "Avg Comments",
+    "Hashtags Per Post",
+    "Has URL in Bio",
+    "Posting Regularity",
+    "Content Repetition Score",
+    "Engagement Consistency"
+  ],
+  "results": {
+    "Logistic Regression": {
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "auc_roc": 1.0,
+      "confusion_matrix": [
+        [
+          600,
+          0
+        ],
+        [
+          0,
+          400
+        ]
+      ]
+    },
+    "Random Forest": {
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "auc_roc": 1.0,
+      "confusion_matrix": [
+        [
+          600,
+          0
+        ],
+        [
+          0,
+          400
+        ]
+      ]
+    },
+    "XGBoost": {
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "auc_roc": 1.0,
+      "confusion_matrix": [
+        [
+          600,
+          0
+        ],
+        [
+          0,
+          400
+        ]
+      ]
+    }
+  },
+  "feature_importance": {},
+  "needs_scaling": true,
+  "training_samples": 4000,
+  "test_samples": 1000
+}

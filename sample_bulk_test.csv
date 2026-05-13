@@ -1,0 +1,11 @@
+username,followers_count,following_count,account_age_days,bio_length,has_profile_pic,posts_per_day,avg_likes,avg_comments,hashtags_per_post,has_url_in_bio,posting_regularity,content_repetition_score,engagement_consistency
+real_user_alice,3200,420,1500,85,1,0.9,145,18,4,1,0.52,0.07,0.85
+bot_account_x,8,6200,12,0,0,35,0,0,25,1,0.98,0.92,0.03
+influencer_jane,45000,800,2500,120,1,1.2,2200,350,6,1,0.45,0.05,0.88
+spam_king_99,150,3500,45,155,0,18,2,0,28,1,0.88,0.78,0.12
+normal_person,580,310,900,60,1,0.3,35,5,2,0,0.4,0.12,0.72
+fake_engagement,85000,80000,200,50,1,8,85,3,18,0,0.75,0.55,0.15
+student_dev,280,190,600,90,1,0.5,22,4,3,1,0.35,0.08,0.78
+troll_farm_1,25,4800,7,10,0,42,1,0,22,1,0.99,0.88,0.02
+photographer,12000,1200,1800,100,1,0.7,800,120,5,1,0.5,0.06,0.82
+impersonator,2500,200,20,140,1,2.5,45,3,7,0,0.55,0.62,0.28
