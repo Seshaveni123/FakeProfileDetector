@@ -1,269 +1,239 @@
-# 🛡️ Platform-Aware Fake Profile Detection System
+# FakeGuard AI - Fake Profile Detector
 
-> **ML-powered fake profile detection for Instagram & Twitter with full DevOps & Cloud Integration**
+FakeGuard AI is a full-stack machine learning project for detecting fake social media profiles on Instagram and Twitter/X. It includes a FastAPI backend, a React + Vite frontend, trained platform-specific ML models, prediction history storage, bulk CSV scanning, dashboard analytics, and model information views.
 
-[![CI/CD Pipeline](https://github.com/YOUR_USERNAME/FakeProfileDetector/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/YOUR_USERNAME/FakeProfileDetector/actions)
-[![Python 3.11](https://img.shields.io/badge/Python-3.11-blue.svg)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.109-green.svg)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://react.dev)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://docker.com)
+## Features
 
----
+- Platform selector for Instagram and Twitter/X
+- Separate ML models for each platform
+- Single-profile prediction with fake probability and risk level
+- Human-readable explanation for each prediction
+- Feature importance display from trained model metadata
+- Bulk CSV upload for batch profile checks
+- Prediction history saved in local SQLite
+- Dashboard with scan totals, fake/real counts, platform breakdown, and risk distribution
+- Prometheus-style metrics endpoint at `/metrics`
+- Windows helper scripts for setup and startup
 
-## 📑 Table of Contents
+## Tech Stack
 
-- [Overview](#-overview)
-- [Architecture](#-architecture)
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [Project Structure](#-project-structure)
-- [Quick Start](#-quick-start)
-- [API Documentation](#-api-documentation)
-- [DevOps & Cloud](#-devops--cloud-integration)
-- [Deployment](#-deployment)
-- [Screenshots](#-screenshots)
+| Area | Tools |
+| --- | --- |
+| Backend | FastAPI, Uvicorn, Pydantic |
+| Machine Learning | scikit-learn, XGBoost, pandas, NumPy |
+| Frontend | React 18, Vite, CSS |
+| Database | SQLite |
+| Testing | pytest, FastAPI TestClient |
 
----
+## Project Structure
 
-## 🎯 Overview
-
-This project is a **full-stack, end-to-end fake profile detection system** that uses separate Machine Learning models for **Instagram** and **Twitter** platforms. It features:
-
-- **Platform-specific ML models** (Random Forest + XGBoost)
-- **FastAPI REST API** with Prometheus metrics
-- **React frontend** with platform-aware dynamic forms
-- **Docker containerization** with docker-compose
-- **CI/CD pipeline** via GitHub Actions
-- **Infrastructure as Code** with Terraform
-- **Monitoring & Observability** with Prometheus + Grafana
-- **Database storage** with SQLite (local) / Supabase (cloud)
-
----
-
-## 🏗️ Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        USER BROWSER                         │
-│                    React Frontend (Vite)                     │
-│              Platform Selector → Dynamic Forms              │
-└──────────────────────┬──────────────────────────────────────┘
-                       │ HTTP/REST
-┌──────────────────────▼──────────────────────────────────────┐
-│                     FastAPI Backend                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │
-│  │ Instagram    │  │ Twitter      │  │ Prometheus       │  │
-│  │ Model (.pkl) │  │ Model (.pkl) │  │ /metrics         │  │
-│  └──────────────┘  └──────────────┘  └──────────────────┘  │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │              SQLite / Supabase (PostgreSQL)           │  │
-│  │              Prediction History Storage               │  │
-│  └──────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────────┐
-│   Monitoring: Prometheus (scrape) → Grafana (visualize)     │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## ✨ Features
-
-### Machine Learning
-- ✅ Separate models per platform (Instagram / Twitter)
-- ✅ Random Forest (primary) + XGBoost (optional)
-- ✅ Feature engineering: `follower_ratio`, `engagement_rate`, `activity_score`
-- ✅ Explainable AI — human-readable prediction explanations
-- ✅ Feature importance visualization
-
-### Backend (FastAPI)
-- ✅ `GET /` → Health check
-- ✅ `POST /predict` → Platform-aware prediction
-- ✅ `POST /predict/bulk` → CSV bulk upload
-- ✅ `GET /history` → Prediction history (filterable by platform)
-- ✅ `GET /dashboard` → Analytics with platform breakdown
-- ✅ `GET /model-info` → Model performance metrics
-- ✅ `GET /metrics` → Prometheus metrics endpoint
-- ✅ Pydantic validation & CORS support
-
-### Frontend (React + Vite)
-- ✅ Platform selector (Instagram / Twitter)
-- ✅ Dynamic input forms per platform
-- ✅ Real/Fake demo data loaders
-- ✅ Confidence gauge & risk level visualization
-- ✅ Feature importance bar charts
-- ✅ Bulk CSV upload
-- ✅ Analytics dashboard with platform breakdown
-- ✅ Prediction history table
-- ✅ Toast notifications & loading spinners
-- ✅ Premium glassmorphism dark theme
-
-### DevOps & Cloud
-- ✅ Docker multi-stage builds
-- ✅ Docker Compose (backend + frontend + Prometheus + Grafana)
-- ✅ GitHub Actions CI/CD pipeline
-- ✅ Terraform IaC for AWS EC2
-- ✅ Prometheus metrics collection
-- ✅ Grafana dashboard provisioning
-- ✅ Supabase PostgreSQL schema
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| **ML** | scikit-learn, XGBoost, pandas, NumPy |
-| **Backend** | FastAPI, Pydantic, Uvicorn |
-| **Frontend** | React 18, Vite, CSS (glassmorphism) |
-| **Database** | SQLite (local), Supabase PostgreSQL (cloud) |
-| **Containerization** | Docker, Docker Compose |
-| **CI/CD** | GitHub Actions |
-| **IaC** | Terraform (AWS) |
-| **Monitoring** | Prometheus, Grafana |
-| **Version Control** | Git, GitHub |
-
----
-
-## 📁 Project Structure
-
-```
+```text
 FakeProfileDetector/
-├── ml/                          # Machine Learning
-│   ├── generate_dataset.py      # Synthetic dataset generator
-│   └── train_models.py          # Model training pipeline
-├── backend/                     # FastAPI Backend
-│   ├── app.py                   # API endpoints
-│   └── requirements.txt         # Python dependencies
-├── frontend/                    # React Frontend
-│   ├── src/
-│   │   ├── App.jsx              # Main application
-│   │   ├── index.css            # Design system
-│   │   └── main.jsx             # Entry point
-│   ├── package.json
-│   └── vite.config.js
-├── data/                        # Generated datasets
-│   ├── instagram_dataset.csv
-│   ├── twitter_dataset.csv
-│   ├── sample_instagram_bulk.csv
-│   └── sample_twitter_bulk.csv
-├── models/                      # Trained models
-│   ├── insta_model.pkl
-│   ├── insta_scaler.pkl
-│   ├── insta_metadata.json
-│   ├── twitter_model.pkl
-│   ├── twitter_scaler.pkl
-│   └── twitter_metadata.json
-├── docker/                      # Docker configs
-│   ├── Dockerfile.backend
-│   ├── Dockerfile.frontend
-│   └── nginx.conf
-├── monitoring/                  # Observability
-│   ├── prometheus.yml
-│   └── grafana-datasources.yml
-├── terraform/                   # Infrastructure as Code
-│   └── main.tf
-├── database/                    # DB Schema
-│   └── schema.sql
-├── tests/                       # API Tests
-│   └── test_api.py
-├── .github/workflows/           # CI/CD
-│   └── ci-cd.yml
-├── docker-compose.yml           # Full stack compose
-├── .gitignore
-└── README.md
+|-- backend/
+|   |-- app.py                    # FastAPI API and SQLite history
+|   |-- requirements.txt          # Backend and ML dependencies
+|   |-- Dockerfile
+|   |-- dataset/                  # Older single-dataset training assets
+|   `-- model/                    # Older single-model artifacts
+|-- frontend/
+|   |-- src/
+|   |   |-- App.jsx               # Main React application
+|   |   |-- index.css             # UI styling
+|   |   `-- main.jsx              # React entry point
+|   |-- package.json
+|   |-- vite.config.js
+|   `-- Dockerfile
+|-- ml/
+|   `-- train_models.py           # Trains Instagram and Twitter models
+|-- backend/models/
+|   |-- insta_model.pkl
+|   |-- insta_scaler.pkl
+|   |-- insta_metadata.json
+|   |-- twitter_model.pkl
+|   |-- twitter_scaler.pkl
+|   `-- twitter_metadata.json
+|-- instagram1/
+|-- instagram2/
+|-- twitter1/
+|-- twitter2/                     # Raw datasets used for training/reference
+|-- database/
+|   `-- schema.sql
+|-- tests/
+|   `-- test_api.py
+|-- sample_bulk_test.csv
+|-- docker-compose.yml
+|-- setup.bat
+|-- start_backend.bat
+|-- start_frontend.bat
+`-- README.md
 ```
 
----
+## Prerequisites
 
-## 🚀 Quick Start
+- Python 3.11 or newer
+- Node.js 18 or newer
+- npm
 
-### Prerequisites
-- Python 3.11+
-- Node.js 20+
-- Docker (optional, for containerized deployment)
+## Setup
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/YOUR_USERNAME/FakeProfileDetector.git
-cd FakeProfileDetector
+### Option 1: Windows setup script
+
+Run this from the project root:
+
+```bat
+setup.bat
 ```
 
-### 2. Generate Datasets & Train Models
+The script installs Python dependencies, trains the platform-specific models, and installs frontend dependencies.
+
+### Option 2: Manual setup
+
+Install backend dependencies:
+
 ```bash
 pip install -r backend/requirements.txt
-python ml/generate_dataset.py
+```
+
+Train or regenerate the ML models:
+
+```bash
 python ml/train_models.py
 ```
 
-### 3. Start the Backend
-```bash
-cd backend
-uvicorn app:app --reload --host 0.0.0.0 --port 8000
-```
-API available at: http://localhost:8000
+Install frontend dependencies:
 
-### 4. Start the Frontend
 ```bash
 cd frontend
 npm install
+```
+
+## Run the Application
+
+Start the backend:
+
+```bat
+start_backend.bat
+```
+
+Or manually:
+
+```bash
+cd backend
+python -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
+```
+
+Start the frontend in a second terminal:
+
+```bat
+start_frontend.bat
+```
+
+Or manually:
+
+```bash
+cd frontend
 npm run dev
 ```
-UI available at: http://localhost:5173
 
-### 5. (Optional) Run with Docker Compose
+Local URLs:
+
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+- Swagger docs: `http://localhost:8000/docs`
+
+## Run with Docker Compose
+
+The Docker setup runs the FastAPI backend and Vite frontend as separate services.
+The backend image includes the model artifacts from `backend/models/`.
+
 ```bash
-docker-compose up -d --build
+docker compose down
+docker compose up --build
 ```
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- Prometheus: http://localhost:9090
-- Grafana: http://localhost:3001 (admin/fakeguard123)
 
----
+Docker URLs:
 
-## 📡 API Documentation
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+- Swagger docs: `http://localhost:8000/docs`
 
-### `POST /predict`
+## Model Training
 
-Predict if a profile is fake or real.
+The main training script is:
 
-**Request (Instagram):**
+```bash
+python ml/train_models.py
+```
+
+It loads the local datasets from:
+
+- `instagram1/Instagram_fake_profile_dataset.csv`
+- `instagram2/train.csv`
+- `instagram2/test.csv`
+- `twitter1/bot_detection_data.csv`
+- `twitter2/twitter_human_bots_dataset.csv` for label/reference information
+
+The generated model artifacts are saved in `backend/models/`:
+
+- `insta_model.pkl`
+- `insta_scaler.pkl`
+- `insta_metadata.json`
+- `twitter_model.pkl`
+- `twitter_scaler.pkl`
+- `twitter_metadata.json`
+
+The backend expects these files to exist before it starts.
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/` | API health check and model summary |
+| `POST` | `/predict` | Predict one Instagram or Twitter/X profile |
+| `POST` | `/predict/bulk?platform=instagram` | Upload a CSV and scan many profiles |
+| `GET` | `/history` | Read saved prediction history |
+| `GET` | `/dashboard` | Read aggregate dashboard statistics |
+| `GET` | `/model-info` | Read model metadata and metrics |
+| `GET` | `/metrics` | Prometheus-style text metrics |
+| `DELETE` | `/history/clear` | Clear local prediction history |
+
+## Example Requests
+
+Instagram prediction:
+
 ```json
 {
   "platform": "instagram",
-  "username": "test_user",
-  "followers_count": 4500,
-  "following_count": 380,
-  "posts_count": 340,
-  "account_age_days": 1800,
-  "bio_length": 90,
-  "has_profile_pic": 1,
-  "avg_likes": 180,
-  "avg_comments": 12
+  "username": "sample_user",
+  "profile_pic": 1,
+  "nums_length_username": 0.0,
+  "fullname_words": 2,
+  "nums_length_fullname": 0.0,
+  "name_eq_username": 0,
+  "description_length": 80,
+  "external_url": 1,
+  "private": 0,
+  "posts_count": 120,
+  "followers_count": 1500,
+  "following_count": 350
 }
 ```
 
-**Request (Twitter):**
+Twitter/X prediction:
+
 ```json
 {
   "platform": "twitter",
-  "username": "test_tweeter",
-  "followers_count": 3200,
-  "following_count": 450,
-  "tweets_count": 8500,
-  "account_age_days": 2900,
-  "bio_length": 110,
-  "has_profile_pic": 1,
-  "listed_count": 45,
-  "avg_retweets": 8,
-  "avg_favorites": 25,
-  "reply_ratio": 0.25
+  "username": "sample_twitter_user",
+  "retweet_count": 8,
+  "mention_count": 2,
+  "follower_count_twitter": 3200,
+  "verified": 0
 }
 ```
 
-**Response:**
+Typical response:
+
 ```json
 {
   "platform": "instagram",
@@ -271,125 +241,77 @@ Predict if a profile is fake or real.
   "probability": 0.0523,
   "label": "Real Profile",
   "risk_level": "low",
-  "feature_importance": { ... },
+  "feature_importance": {
+    "Followers": 0.34
+  },
   "explanation": [
-    "✅ Has a profile picture",
-    "📅 Well-established account (over a year old)"
+    "Has a profile picture",
+    "Detailed bio/description present"
   ]
 }
 ```
 
-### Other Endpoints
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/` | Health check |
-| `POST` | `/predict/bulk?platform=instagram` | Bulk CSV prediction |
-| `GET` | `/history?platform=twitter` | Prediction history |
-| `GET` | `/dashboard` | Analytics dashboard |
-| `GET` | `/model-info` | Model information |
-| `GET` | `/metrics` | Prometheus metrics |
-| `DELETE` | `/history/clear` | Clear history |
+## Bulk CSV Upload
 
----
+Use the frontend Bulk Check tab or call:
 
-## ☁️ DevOps & Cloud Integration
-
-### Version Control
-- Git repository with `main` and `dev` branches
-- `.gitignore` configured for Python, Node, Terraform, Docker
-
-### Containerization (Docker)
 ```bash
-# Build and run full stack
-docker-compose up -d --build
-
-# View logs
-docker-compose logs -f backend
+curl -X POST "http://localhost:8000/predict/bulk?platform=instagram" \
+  -F "file=@sample_bulk_test.csv"
 ```
 
-### CI/CD Pipeline (GitHub Actions)
-The pipeline runs on push to `main`/`dev`:
-1. **Backend Tests** — Install deps, generate data, train models, run pytest
-2. **Frontend Build** — npm ci, build production bundle
-3. **Docker Build** — Build backend + frontend images
-4. **Deploy** — Production deployment (main branch only)
+For Instagram CSVs, useful columns include:
 
-### Infrastructure as Code (Terraform)
-```bash
-cd terraform
-terraform init
-terraform plan
-terraform apply
-```
-Provisions: AWS EC2 + Security Groups + Docker auto-setup
+- `username`
+- `profile pic`
+- `nums/length username`
+- `fullname words`
+- `nums/length fullname`
+- `name==username`
+- `description length`
+- `external URL`
+- `private`
+- `#posts`
+- `#followers`
+- `#follows`
 
-### Monitoring & Observability
-- **Prometheus** scrapes `GET /metrics` every 15s
-- **Grafana** pre-configured with Prometheus datasource
-- Metrics tracked: predictions_total, predictions_fake/real, per-platform counts, request duration
+For Twitter/X CSVs, useful columns include:
 
-### Security (DevSecOps)
-- CORS configured on backend
-- Pydantic input validation on all endpoints
-- Security headers via nginx
-- Supabase Row Level Security (RLS)
-- No hardcoded secrets (environment variables)
+- `username`
+- `Retweet Count`
+- `Mention Count`
+- `Follower Count`
+- `Verified`
 
----
+## Testing
 
-## 🚀 Deployment
-
-### Option A: AWS EC2 (Terraform)
-```bash
-cd terraform && terraform apply
-# SSH into instance, docker-compose up
-```
-
-### Option B: Render (Backend)
-1. Connect GitHub repo to Render
-2. Set build command: `pip install -r backend/requirements.txt && python ml/generate_dataset.py && python ml/train_models.py`
-3. Set start command: `uvicorn backend.app:app --host 0.0.0.0 --port $PORT`
-
-### Option C: Vercel (Frontend)
-1. Connect GitHub repo to Vercel
-2. Set root directory: `frontend`
-3. Framework: Vite
-4. Build command: `npm run build`
-
-### Option D: Supabase (Database)
-1. Create Supabase project
-2. Run `database/schema.sql` in SQL Editor
-3. Update backend to use Supabase connection string
-
----
-
-## 🧪 Testing
+Run the API test suite from the project root:
 
 ```bash
-# Install test dependencies
-pip install pytest httpx
-
-# Run tests
 python -m pytest tests/ -v
 ```
 
----
+The tests import the FastAPI app directly, so the trained model files in `backend/models/` must be available.
 
-## 📊 Model Performance
+## Notes
 
-| Platform | Model | Accuracy | Precision | Recall | F1 Score | AUC-ROC |
-|----------|-------|----------|-----------|--------|----------|---------|
-| Instagram | Random Forest | ~97% | ~96% | ~97% | ~97% | ~99% |
-| Twitter | Random Forest | ~97% | ~96% | ~97% | ~97% | ~99% |
+- Prediction history is stored locally in `backend/predictions.db`.
+- The frontend is configured to call `http://localhost:8000`.
+- Files such as generated datasets, model artifacts, `node_modules`, caches, and local environment files are ignored by Git.
+- This project is intended for learning and demonstration. Real-world fake profile detection should use stronger datasets, continuous validation, abuse monitoring, and careful privacy/security review.
 
----
+## Author
+
 
 ## 👨‍💻 Author
 
 **Seshaveni** — B.Tech CSE
 
----
+
 
 ## 📄 License
 
 This project is for educational purposes.
+
+Mukund - B.Tech CSE
+ (Added Jenkins pipeline)

@@ -1,0 +1,83 @@
+{
+  "platform": "instagram",
+  "best_model": "XGBoost",
+  "feature_columns": [
+    "profile pic",
+    "nums/length username",
+    "fullname words",
+    "nums/length fullname",
+    "name==username",
+    "description length",
+    "external URL",
+    "private",
+    "#posts",
+    "#followers",
+    "#follows"
+  ],
+  "feature_names_display": [
+    "Profile Pic",
+    "Nums in Username",
+    "Fullname Words",
+    "Nums in Fullname",
+    "Name == Username",
+    "Description Length",
+    "External URL",
+    "Private Account",
+    "Posts Count",
+    "Followers",
+    "Following"
+  ],
+  "results": {
+    "Random Forest": {
+      "accuracy": 0.9773,
+      "precision": 0.98,
+      "recall": 0.9742,
+      "f1_score": 0.9771,
+      "auc_roc": 0.9982,
+      "confusion_matrix": [
+        [
+          498,
+          10
+        ],
+        [
+          13,
+          490
+        ]
+      ]
+    },
+    "XGBoost": {
+      "accuracy": 0.9832,
+      "precision": 0.9899,
+      "recall": 0.9761,
+      "f1_score": 0.983,
+      "auc_roc": 0.9989,
+      "confusion_matrix": [
+        [
+          503,
+          5
+        ],
+        [
+          12,
+          491
+        ]
+      ]
+    }
+  },
+  "feature_importance": {
+    "Profile Pic": 0.839,
+    "Nums in Username": 0.0659,
+    "Followers": 0.0226,
+    "Nums in Fullname": 0.0149,
+    "Posts Count": 0.0133,
+    "Description Length": 0.0104,
+    "External URL": 0.0092,
+    "Following": 0.0088,
+    "Private Account": 0.0085,
+    "Fullname Words": 0.0073,
+    "Name == Username": 0.0
+  },
+  "needs_scaling": false,
+  "training_samples": 4041,
+  "test_samples": 1011,
+  "total_samples": 5052
+}

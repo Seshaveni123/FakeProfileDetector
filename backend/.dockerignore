@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+predictions.db
+*.log
+
+*.pyd
+venv/
+.env
+.git
+tests/
+dataset/
+node_modules/

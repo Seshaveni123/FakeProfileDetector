@@ -73,7 +73,7 @@ async def track_metrics(request: Request, call_next):
 # ===================== LOAD MODELS =====================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_DIR = os.path.join(BASE_DIR, '..', 'models')
+MODEL_DIR = os.path.join(BASE_DIR, 'models')
 DB_PATH = os.path.join(BASE_DIR, 'predictions.db')
 
 # Load Instagram model (trained on instagram1 + instagram2 datasets)

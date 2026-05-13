@@ -290,7 +290,7 @@ if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.abspath(__file__))
     # Go up one level from ml/ to project root
     project_root = os.path.join(base_dir, '..')
-    model_dir = os.path.join(project_root, 'models')
+    model_dir = os.path.join(project_root, 'backend', 'models')
 
     # ===================== TRAIN INSTAGRAM MODEL =====================
     insta_df = load_instagram_data(project_root)

@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/Seshaveni123/FakeProfileDetector.git'
+            }
+        }
+
+        stage('Build Backend Image') {
+            steps {
+                bat 'docker build -t seshaveni1/fakeguard-backend ./backend'
+            }
+        }
+
+        stage('Build Frontend Image') {
+            steps {
+                bat 'docker build -t seshaveni1/fakeguard-frontend ./frontend'
+            }
+        }
+
+        stage('Push Backend Image') {
+            steps {
+                bat 'docker push seshaveni1/fakeguard-backend'
+            }
+        }
+
+        stage('Push Frontend Image') {
+            steps {
+                bat 'docker push seshaveni1/fakeguard-frontend'
+            }
+        }
+    }
+}
