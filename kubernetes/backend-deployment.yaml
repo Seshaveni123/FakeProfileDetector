@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: seshaveni1/fakeguard-backend:latest
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "200m"
+          limits:
+            cpu: "500m"
