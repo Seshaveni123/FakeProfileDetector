@@ -1,317 +1,293 @@
-# FakeGuard AI - Fake Profile Detector
+# FakeGuard AI — Cloud-Native Fake Profile Detection Web App
 
-FakeGuard AI is a full-stack machine learning project for detecting fake social media profiles on Instagram and Twitter/X. It includes a FastAPI backend, a React + Vite frontend, trained platform-specific ML models, prediction history storage, bulk CSV scanning, dashboard analytics, and model information views.
+## Overview
 
-## Features
+FakeGuard AI is an AI-powered fake profile detection web application designed to classify social media profiles as **Fake** or **Genuine** using Machine Learning models like **Random Forest** and **XGBoost**.
 
-- Platform selector for Instagram and Twitter/X
-- Separate ML models for each platform
-- Single-profile prediction with fake probability and risk level
-- Human-readable explanation for each prediction
-- Feature importance display from trained model metadata
-- Bulk CSV upload for batch profile checks
-- Prediction history saved in local SQLite
-- Dashboard with scan totals, fake/real counts, platform breakdown, and risk distribution
-- Prometheus-style metrics endpoint at `/metrics`
-- Windows helper scripts for setup and startup
+The project integrates **Machine Learning, Full Stack Development, DevOps, Cloud Computing, and Kubernetes orchestration** to build a scalable and production-ready application.
 
-## Tech Stack
+---
 
-| Area | Tools |
-| --- | --- |
-| Backend | FastAPI, Uvicorn, Pydantic |
-| Machine Learning | scikit-learn, XGBoost, pandas, NumPy |
-| Frontend | React 18, Vite, CSS |
-| Database | SQLite |
-| Testing | pytest, FastAPI TestClient |
+# Features
 
-## Project Structure
+* Fake vs Genuine profile prediction
+* Machine Learning based classification
+* React.js frontend
+* FastAPI backend APIs
+* Docker containerization
+* Jenkins CI/CD automation
+* Kubernetes deployment
+* Horizontal Pod Autoscaling (HPA)
+* Ingress-based routing
+* AWS infrastructure provisioning using Terraform
+* Monitoring with Prometheus & Grafana
+
+---
+
+# Tech Stack
+
+## Frontend
+
+* React.js
+* HTML
+* CSS
+* JavaScript
+
+## Backend
+
+* FastAPI
+* Python
+
+## Machine Learning
+
+* Random Forest
+* XGBoost
+* Scikit-Learn
+* Pandas
+* NumPy
+
+## DevOps & Cloud
+
+* Docker
+* Jenkins
+* Kubernetes
+* Terraform
+* AWS
+* Git & GitHub
+
+## Monitoring
+
+* Prometheus
+* Grafana
+
+---
+
+# Architecture Workflow
 
 ```text
-FakeProfileDetector/
-|-- backend/
-|   |-- app.py                    # FastAPI API and SQLite history
-|   |-- requirements.txt          # Backend and ML dependencies
-|   |-- Dockerfile
-|   |-- dataset/                  # Older single-dataset training assets
-|   `-- model/                    # Older single-model artifacts
-|-- frontend/
-|   |-- src/
-|   |   |-- App.jsx               # Main React application
-|   |   |-- index.css             # UI styling
-|   |   `-- main.jsx              # React entry point
-|   |-- package.json
-|   |-- vite.config.js
-|   `-- Dockerfile
-|-- ml/
-|   `-- train_models.py           # Trains Instagram and Twitter models
-|-- backend/models/
-|   |-- insta_model.pkl
-|   |-- insta_scaler.pkl
-|   |-- insta_metadata.json
-|   |-- twitter_model.pkl
-|   |-- twitter_scaler.pkl
-|   `-- twitter_metadata.json
-|-- instagram1/
-|-- instagram2/
-|-- twitter1/
-|-- twitter2/                     # Raw datasets used for training/reference
-|-- database/
-|   `-- schema.sql
-|-- tests/
-|   `-- test_api.py
-|-- sample_bulk_test.csv
-|-- docker-compose.yml
-|-- setup.bat
-|-- start_backend.bat
-|-- start_frontend.bat
-`-- README.md
+Developer Code
+       ↓
+GitHub Repository
+       ↓
+Jenkins CI/CD Pipeline
+       ↓
+Docker Image Build
+       ↓
+DockerHub Push
+       ↓
+Kubernetes Deployment
+       ↓
+Ingress Routing
+       ↓
+Auto Scaling using HPA
+       ↓
+Monitoring using Prometheus & Grafana
+       ↓
+AWS Infrastructure using Terraform
 ```
 
-## Prerequisites
+---
 
-- Python 3.11 or newer
-- Node.js 18 or newer
-- npm
-
-## Setup
-
-### Option 1: Windows setup script
-
-Run this from the project root:
-
-```bat
-setup.bat
-```
-
-The script installs Python dependencies, trains the platform-specific models, and installs frontend dependencies.
-
-### Option 2: Manual setup
-
-Install backend dependencies:
+# Project Structure
 
 ```bash
-pip install -r backend/requirements.txt
+FakeGuardAI/
+│
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   ├── Dockerfile
+│
+├── backend/
+│   ├── app/
+│   ├── model/
+│   ├── requirements.txt
+│   ├── Dockerfile
+│
+├── kubernetes/
+│   ├── frontend-deployment.yaml
+│   ├── backend-deployment.yaml
+│   ├── services.yaml
+│   ├── ingress.yaml
+│   ├── hpa.yaml
+│
+├── terraform/
+│   ├── main.tf
+│
+├── Jenkinsfile
+│
+└── README.md
 ```
 
-Train or regenerate the ML models:
+---
+
+# Machine Learning Workflow
+
+1. Data Collection
+2. Data Preprocessing
+3. Feature Engineering
+4. Model Training
+5. Model Evaluation
+6. Fake Profile Prediction
+
+## Algorithms Used
+
+* Random Forest
+* XGBoost
+
+---
+
+# Docker Setup
+
+## Build Backend Image
 
 ```bash
-python ml/train_models.py
+docker build -t fakeguard-backend ./backend
 ```
 
-Install frontend dependencies:
+## Build Frontend Image
 
 ```bash
-cd frontend
-npm install
+docker build -t fakeguard-frontend ./frontend
 ```
 
-## Run the Application
+---
 
-Start the backend:
+# Jenkins CI/CD Pipeline
 
-```bat
-start_backend.bat
-```
+The Jenkins pipeline automates:
 
-Or manually:
+* GitHub repository cloning
+* Docker image building
+* DockerHub image push
+* Kubernetes deployment
+
+---
+
+# Kubernetes Deployment
+
+## Start Minikube
 
 ```bash
-cd backend
-python -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
+minikube start --driver=docker
 ```
 
-Start the frontend in a second terminal:
-
-```bat
-start_frontend.bat
-```
-
-Or manually:
+## Enable Ingress
 
 ```bash
-cd frontend
-npm run dev
+minikube addons enable ingress
 ```
 
-Local URLs:
-
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:8000`
-- Swagger docs: `http://localhost:8000/docs`
-
-## Run with Docker Compose
-
-The Docker setup runs the FastAPI backend and Vite frontend as separate services.
-The backend image includes the model artifacts from `backend/models/`.
+## Enable Metrics Server
 
 ```bash
-docker compose down
-docker compose up --build
+minikube addons enable metrics-server
 ```
 
-Docker URLs:
-
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:8000`
-- Swagger docs: `http://localhost:8000/docs`
-
-## Model Training
-
-The main training script is:
+## Apply Kubernetes Configurations
 
 ```bash
-python ml/train_models.py
+kubectl apply -f kubernetes/
 ```
 
-It loads the local datasets from:
+---
 
-- `instagram1/Instagram_fake_profile_dataset.csv`
-- `instagram2/train.csv`
-- `instagram2/test.csv`
-- `twitter1/bot_detection_data.csv`
-- `twitter2/twitter_human_bots_dataset.csv` for label/reference information
+# Auto Scaling
 
-The generated model artifacts are saved in `backend/models/`:
+Horizontal Pod Autoscaler (HPA) automatically scales pods based on CPU utilization.
 
-- `insta_model.pkl`
-- `insta_scaler.pkl`
-- `insta_metadata.json`
-- `twitter_model.pkl`
-- `twitter_scaler.pkl`
-- `twitter_metadata.json`
+## Configuration
 
-The backend expects these files to exist before it starts.
+* Minimum Replicas: 2
+* Maximum Replicas: 5
+* CPU Threshold: 70%
 
-## API Endpoints
+---
 
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| `GET` | `/` | API health check and model summary |
-| `POST` | `/predict` | Predict one Instagram or Twitter/X profile |
-| `POST` | `/predict/bulk?platform=instagram` | Upload a CSV and scan many profiles |
-| `GET` | `/history` | Read saved prediction history |
-| `GET` | `/dashboard` | Read aggregate dashboard statistics |
-| `GET` | `/model-info` | Read model metadata and metrics |
-| `GET` | `/metrics` | Prometheus-style text metrics |
-| `DELETE` | `/history/clear` | Clear local prediction history |
+# Monitoring
 
-## Example Requests
+## Prometheus
 
-Instagram prediction:
+Used for collecting Kubernetes cluster metrics.
 
-```json
-{
-  "platform": "instagram",
-  "username": "sample_user",
-  "profile_pic": 1,
-  "nums_length_username": 0.0,
-  "fullname_words": 2,
-  "nums_length_fullname": 0.0,
-  "name_eq_username": 0,
-  "description_length": 80,
-  "external_url": 1,
-  "private": 0,
-  "posts_count": 120,
-  "followers_count": 1500,
-  "following_count": 350
-}
-```
+## Grafana
 
-Twitter/X prediction:
+Used for visualizing:
 
-```json
-{
-  "platform": "twitter",
-  "username": "sample_twitter_user",
-  "retweet_count": 8,
-  "mention_count": 2,
-  "follower_count_twitter": 3200,
-  "verified": 0
-}
-```
+* CPU usage
+* Memory usage
+* Pod health
+* Cluster performance
 
-Typical response:
+---
 
-```json
-{
-  "platform": "instagram",
-  "is_fake": 0,
-  "probability": 0.0523,
-  "label": "Real Profile",
-  "risk_level": "low",
-  "feature_importance": {
-    "Followers": 0.34
-  },
-  "explanation": [
-    "Has a profile picture",
-    "Detailed bio/description present"
-  ]
-}
-```
+# Terraform AWS Infrastructure
 
-## Bulk CSV Upload
+Terraform automates:
 
-Use the frontend Bulk Check tab or call:
+* EC2 instance creation
+* Security group setup
+* Infrastructure provisioning
+
+## Terraform Commands
 
 ```bash
-curl -X POST "http://localhost:8000/predict/bulk?platform=instagram" \
-  -F "file=@sample_bulk_test.csv"
+terraform init
+terraform plan
+terraform apply
 ```
 
-For Instagram CSVs, useful columns include:
+---
 
-- `username`
-- `profile pic`
-- `nums/length username`
-- `fullname words`
-- `nums/length fullname`
-- `name==username`
-- `description length`
-- `external URL`
-- `private`
-- `#posts`
-- `#followers`
-- `#follows`
-
-For Twitter/X CSVs, useful columns include:
-
-- `username`
-- `Retweet Count`
-- `Mention Count`
-- `Follower Count`
-- `Verified`
-
-## Testing
-
-Run the API test suite from the project root:
+# Kubernetes Verification Commands
 
 ```bash
-python -m pytest tests/ -v
+kubectl get pods
+kubectl get svc
+kubectl get ingress
+kubectl get hpa
 ```
 
-The tests import the FastAPI app directly, so the trained model files in `backend/models/` must be available.
+---
 
-## Notes
+# Advantages of the Project
 
-- Prediction history is stored locally in `backend/predictions.db`.
-- The frontend is configured to call `http://localhost:8000`.
-- Files such as generated datasets, model artifacts, `node_modules`, caches, and local environment files are ignored by Git.
-- This project is intended for learning and demonstration. Real-world fake profile detection should use stronger datasets, continuous validation, abuse monitoring, and careful privacy/security review.
+* Scalable cloud-native architecture
+* Automated deployment pipeline
+* Real-time monitoring
+* Containerized application deployment
+* Infrastructure automation
+* High availability using Kubernetes
+* CI/CD integration
 
-## Author
+---
+
+# Future Enhancements
+
+* Deep Learning integration
+* Real-time social media API analysis
+* Multi-platform profile verification
+* Advanced fraud analytics dashboard
+* Authentication and user management
+
+---
+
+# Conclusion
+
+FakeGuard AI combines:
+
+* Machine Learning
+* Full Stack Development
+* DevOps
+* Cloud Infrastructure
+* Kubernetes orchestration
+
+to create a scalable and production-ready fake profile detection platform.
+
+---
+
+# Author
+
+**Seshaveni Veeramreddy**
 
 
-## 👨‍💻 Author
-
-**Seshaveni** — B.Tech CSE
-
-
-
-## 📄 License
-
-This project is for educational purposes.
-
-Mukund - B.Tech CSE
- (Added Jenkins pipeline)
