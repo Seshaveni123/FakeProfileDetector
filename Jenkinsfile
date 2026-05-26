@@ -50,5 +50,10 @@ pipeline {
                 sh "docker push $FRONTEND_IMAGE"
             }
         }
+        stage('Deploy to Kubernetes') {
+            steps {
+                 sh 'kubectl apply -f kubernetes/'
+    }
+}
     }
 }
