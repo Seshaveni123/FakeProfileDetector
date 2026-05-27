@@ -1,16 +1,16 @@
 # FakeGuard AI — Cloud-Native Fake Profile Detection Web App
 
-<<<<<<< HEAD
+
 FakeGuard AI is a full-stack machine learning project for detecting fake social media profiles on Instagram and Twitter/X.
 It includes a FastAPI backend, a React + Vite frontend, separate trained models for each platform, SQLite-based prediction
 history, bulk CSV scanning, dashboard analytics, and model metadata views.
-=======
+
 ## Overview
->>>>>>> 854b9fa327a9f54c6dba7d8483c2a24307089c8b
+
 
 FakeGuard AI is an AI-powered fake profile detection web application designed to classify social media profiles as **Fake** or **Genuine** using Machine Learning models like **Random Forest** and **XGBoost**.
 
-<<<<<<< HEAD
+
 - Platform selector for Instagram and Twitter/X
 - Separate ML models for each platform
 - Single-profile prediction with fake probability and risk level
@@ -21,13 +21,12 @@ FakeGuard AI is an AI-powered fake profile detection web application designed to
 - Dashboard with scan totals, fake/real counts, platform breakdown, and risk distribution
 - Prometheus-style metrics endpoint at `/metrics`
 - Docker, Kubernetes, Jenkins, and Terraform assets included
-=======
+
 The project integrates **Machine Learning, Full Stack Development, DevOps, Cloud Computing, and Kubernetes orchestration** to build a scalable and production-ready application.
->>>>>>> 854b9fa327a9f54c6dba7d8483c2a24307089c8b
+
 
 ---
 
-<<<<<<< HEAD
 | Area | Tools |
 | --- | --- |
 | Backend | FastAPI, Uvicorn, Pydantic |
@@ -38,7 +37,7 @@ The project integrates **Machine Learning, Full Stack Development, DevOps, Cloud
 | DevOps | Docker, Docker Compose, Kubernetes, Jenkins, Terraform |
 =======
 # Features
->>>>>>> 854b9fa327a9f54c6dba7d8483c2a24307089c8b
+
 
 * Fake vs Genuine profile prediction
 * Machine Learning based classification
@@ -95,7 +94,7 @@ The project integrates **Machine Learning, Full Stack Development, DevOps, Cloud
 # Architecture Workflow
 
 ```text
-<<<<<<< HEAD
+
 FakeProfileDetector1/
 |-- backend/
 |   |-- app.py
@@ -143,7 +142,7 @@ FakeProfileDetector1/
 |-- start_frontend.bat
 |-- sample_bulk_test.csv
 `-- README.md
-=======
+
 Developer Code
        ↓
 GitHub Repository
@@ -163,12 +162,7 @@ Auto Scaling using HPA
 Monitoring using Prometheus & Grafana
        ↓
 AWS Infrastructure using Terraform
->>>>>>> 854b9fa327a9f54c6dba7d8483c2a24307089c8b
-```
 
----
-
-<<<<<<< HEAD
 - Python 3.11 or newer
 - Node.js 18 or newer
 - npm
@@ -188,9 +182,9 @@ This script installs backend dependencies, trains/regenerates the models, and in
 ### Option 2: Manual setup
 
 Install backend dependencies:
-=======
+
 # Project Structure
->>>>>>> 854b9fa327a9f54c6dba7d8483c2a24307089c8b
+
 
 ```bash
 FakeGuardAI/
@@ -280,7 +274,6 @@ minikube start --driver=docker
 minikube addons enable ingress
 ```
 
-<<<<<<< HEAD
 Local URLs:
 
 - Frontend: `http://localhost:5173`
@@ -304,7 +297,7 @@ Docker URLs:
 ## Model Training
 
 The training script is:
-=======
+
 ## Enable Metrics Server
 
 ```bash
@@ -312,7 +305,7 @@ minikube addons enable metrics-server
 ```
 
 ## Apply Kubernetes Configurations
->>>>>>> 854b9fa327a9f54c6dba7d8483c2a24307089c8b
+
 
 ```bash
 kubectl apply -f kubernetes/
@@ -320,7 +313,6 @@ kubectl apply -f kubernetes/
 
 ---
 
-<<<<<<< HEAD
 - `instagram1/Instagram_fake_profile_dataset.csv`
 - `instagram2/train.csv`
 - `instagram2/test.csv`
@@ -328,25 +320,21 @@ kubectl apply -f kubernetes/
 - `twitter2/twitter_human_bots_dataset.csv`
 
 The generated artifacts are saved in `backend/models/`:
-=======
+
 # Auto Scaling
 
 Horizontal Pod Autoscaler (HPA) automatically scales pods based on CPU utilization.
->>>>>>> 854b9fa327a9f54c6dba7d8483c2a24307089c8b
+
 
 ## Configuration
 
-<<<<<<< HEAD
+
 The backend expects these files to exist before startup.
 =======
 * Minimum Replicas: 2
 * Maximum Replicas: 5
 * CPU Threshold: 70%
->>>>>>> 854b9fa327a9f54c6dba7d8483c2a24307089c8b
 
----
-
-<<<<<<< HEAD
 | Method | Endpoint | Description |
 | --- | --- | --- |
 | `GET` | `/` | Health check and model summary |
@@ -359,7 +347,7 @@ The backend expects these files to exist before startup.
 | `DELETE` | `/history/clear` | Clear local prediction history |
 =======
 # Monitoring
->>>>>>> 854b9fa327a9f54c6dba7d8483c2a24307089c8b
+
 
 ## Prometheus
 
@@ -380,7 +368,7 @@ Used for visualizing:
 
 Terraform automates:
 
-<<<<<<< HEAD
+
 Use the frontend Bulk Check tab or call the API directly:
 
 ```bash
@@ -397,12 +385,10 @@ curl -X POST "http://localhost:8000/predict/bulk?platform=instagram" ^
 terraform init
 terraform plan
 terraform apply
->>>>>>> 854b9fa327a9f54c6dba7d8483c2a24307089c8b
+
 ```
 
----
 
-<<<<<<< HEAD
 - `username`
 - `profile pic`
 - `nums/length username`
@@ -429,9 +415,9 @@ Sample files are available in `data/`.
 ## Testing
 
 Run the API test suite from the project root:
-=======
+
 # Kubernetes Verification Commands
->>>>>>> 854b9fa327a9f54c6dba7d8483c2a24307089c8b
+
 
 ```bash
 kubectl get pods
@@ -442,7 +428,7 @@ kubectl get hpa
 
 ---
 
-<<<<<<< HEAD
+
 ## Kubernetes
 
 The `kubernetes/` folder contains manifests for:
@@ -465,7 +451,7 @@ Apply them with `kubectl` after updating image names and namespaces to match you
 - Generated datasets, model artifacts, `node_modules`, caches, and local environment files should stay out of Git.
 - The repo contains an older `backend/model/` directory from an earlier single-model version, but the current API loads artifacts from `backend/models/`.
 - This project is intended for learning and demonstration. Real-world fake profile detection should use stronger datasets, continuous validation, abuse monitoring, and careful privacy/security review.
-=======
+
 # Advantages of the Project
 
 * Scalable cloud-native architecture
@@ -475,7 +461,7 @@ Apply them with `kubectl` after updating image names and namespaces to match you
 * Infrastructure automation
 * High availability using Kubernetes
 * CI/CD integration
->>>>>>> 854b9fa327a9f54c6dba7d8483c2a24307089c8b
+
 
 ---
 
@@ -509,9 +495,8 @@ to create a scalable and production-ready fake profile detection platform.
 
 Seshaveni
 
-<<<<<<< HEAD
+
 ## License
 
 This project is for educational purposes.
-=======
->>>>>>> 854b9fa327a9f54c6dba7d8483c2a24307089c8b
+
