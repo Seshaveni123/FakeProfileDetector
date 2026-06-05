@@ -345,7 +345,7 @@ The backend expects these files to exist before startup.
 | `GET` | `/model-info` | Read model metadata and metrics |
 | `GET` | `/metrics` | Prometheus-style metrics |
 | `DELETE` | `/history/clear` | Clear local prediction history |
-=======
+
 # Monitoring
 
 
