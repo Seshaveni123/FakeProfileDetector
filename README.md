@@ -35,7 +35,7 @@ The project integrates **Machine Learning, Full Stack Development, DevOps, Cloud
 | Database | SQLite |
 | Testing | pytest, FastAPI TestClient |
 | DevOps | Docker, Docker Compose, Kubernetes, Jenkins, Terraform |
-=======
+
 # Features
 
 
