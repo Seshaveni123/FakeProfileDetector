@@ -44,10 +44,32 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
     
-    html, body, [class*="css"], [class*="st-"] {
-        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    /* Targeted typography rules that do NOT break Streamlit Material Icons or menu buttons */
+    .stApp, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6, 
+    .stMarkdown, .stText, 
+    .hero-banner, .hero-title, .hero-subtitle, .hero-badge,
+    .glass-card, .metric-pill, .reason-item, .platform-chip,
+    .badge-critical, .badge-high, .badge-medium, .badge-low,
+    .app-footer, .stButton button, .stDownloadButton button,
+    [data-testid="stWidgetLabel"], [data-testid="stMarkdownContainer"] p {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
     }
     
+    /* Explicitly preserve and restore icon fonts so they never turn into text ligatures */
+    [data-testid="stIcon"],
+    [data-testid="stFileUploaderDropzone"] svg,
+    [data-baseweb="icon"],
+    span[class*="material-symbols"],
+    span[class*="material-icons"],
+    i[class*="material-icons"],
+    i[class*="material-symbols"],
+    header[data-testid="stHeader"] svg,
+    header[data-testid="stHeader"] button,
+    div[data-testid="stToolbar"] *,
+    div[data-testid="stMainMenu"] * {
+        font-family: inherit !important;
+    }
+
     /* Main Background — Ambient Light Mesh */
     .stApp {
         background-color: #f8fafc;
@@ -73,13 +95,13 @@ st.markdown("""
     }
 
     /* Headings */
-    h1, h2, h3, h4, h5, h6 {
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {
         color: #0f172a !important;
         font-weight: 700 !important;
         letter-spacing: -0.02em;
     }
 
-    p, span, label {
+    .stMarkdown p, .stMarkdown span, [data-testid="stWidgetLabel"] {
         color: #334155;
     }
     
