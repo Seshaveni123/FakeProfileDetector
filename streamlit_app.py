@@ -1,6 +1,6 @@
 """
 FakeGuard AI — Cloud-Native Fake Profile Detection Platform
-Streamlit Web Application
+Streamlit Web Application (Light Theme Edition)
 Supports: Instagram & Twitter/X profile risk analysis, Bulk CSV scanning,
 Live Threat Dashboard, Audit Logs, and ML Architecture Explorer.
 """
@@ -38,158 +38,394 @@ if not os.path.exists(MODELS_DIR):
     BACKEND_DIR = os.path.join(BASE_DIR, "FakeProfileDetector", "backend")
     DB_PATH = os.path.join(BACKEND_DIR, "predictions.db")
 
-# ===================== CUSTOM CSS & STYLING =====================
+# ===================== CUSTOM CSS & LIGHT THEME STYLING =====================
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
     
-    html, body, [class*="css"] {
-        font-family: 'Plus Jakarta Sans', sans-serif;
+    html, body, [class*="css"], [class*="st-"] {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
     
-    /* Main Background & Cards */
+    /* Main Background — Ambient Light Mesh */
     .stApp {
-        background: radial-gradient(circle at top right, #131b2e 0%, #0b0f19 50%, #060911 100%);
+        background-color: #f8fafc;
+        background-image: 
+            radial-gradient(at 0% 0%, rgba(224, 231, 255, 0.45) 0px, transparent 50%),
+            radial-gradient(at 100% 0%, rgba(243, 232, 255, 0.45) 0px, transparent 50%),
+            radial-gradient(at 50% 100%, rgba(224, 242, 254, 0.35) 0px, transparent 50%);
+        background-attachment: fixed;
+        color: #0f172a;
+    }
+
+    /* Streamlit Main Container Spacing */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+        max-width: 1280px;
+    }
+
+    /* Headings */
+    h1, h2, h3, h4, h5, h6 {
+        color: #0f172a !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.02em;
+    }
+
+    p, span, label {
+        color: #334155;
     }
     
+    /* Elegant Light Cards */
     .glass-card {
-        background: rgba(30, 41, 59, 0.7);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 16px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
         padding: 24px;
         margin-bottom: 20px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        transition: transform 0.2s ease, border-color 0.2s ease;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease;
     }
     
     .glass-card:hover {
-        border-color: rgba(99, 102, 241, 0.4);
+        border-color: #cbd5e1;
+        box-shadow: 0 12px 28px -4px rgba(99, 102, 241, 0.08), 0 4px 10px -2px rgba(0, 0, 0, 0.03);
+        transform: translateY(-2px);
     }
     
+    /* Hero Banner */
     .hero-banner {
-        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 50%, rgba(236, 72, 153, 0.1) 100%);
-        border: 1px solid rgba(168, 85, 247, 0.3);
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 45%, #eef2ff 100%);
+        border: 1px solid #e0e7ff;
         border-radius: 20px;
-        padding: 28px 32px;
-        margin-bottom: 25px;
-        box-shadow: 0 10px 40px -10px rgba(99, 102, 241, 0.25);
+        padding: 28px 34px;
+        margin-bottom: 24px;
+        box-shadow: 0 10px 30px -5px rgba(79, 70, 229, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-banner::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 180px;
+        height: 100%;
+        background: radial-gradient(circle at center, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #e0e7ff;
+        color: #4338ca;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 12px;
     }
     
     .hero-title {
-        font-size: 2.2rem;
+        font-size: 2.25rem;
         font-weight: 800;
-        background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #818cf8 100%);
+        background: linear-gradient(135deg, #0f172a 0%, #312e81 60%, #4f46e5 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin: 0;
+        letter-spacing: -0.03em;
+        line-height: 1.2;
     }
     
     .hero-subtitle {
-        color: #94a3b8;
-        font-size: 1rem;
-        margin-top: 6px;
-        line-height: 1.5;
+        color: #475569;
+        font-size: 1.02rem;
+        margin-top: 8px;
+        margin-bottom: 0;
+        line-height: 1.6;
+    }
+
+    .hero-subtitle strong {
+        color: #1e1b4b;
+        font-weight: 600;
+    }
+
+    /* Header Status Card */
+    .header-status-card {
+        padding: 20px 24px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: calc(100% - 24px);
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Pulse animation for live online indicator */
+    @keyframes pulse-green {
+        0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
+        70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
     
-    /* Risk Badges */
+    .pulse-dot {
+        height: 10px;
+        width: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        animation: pulse-green 2s infinite;
+    }
+
+    .platform-chip {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        font-weight: 600;
+    }
+
+    .insta-chip {
+        background: #fdf2f8;
+        color: #be185d;
+        border: 1px solid #fbcfe8;
+    }
+
+    .tw-chip {
+        background: #f0f9ff;
+        color: #0284c7;
+        border: 1px solid #bae6fd;
+    }
+    
+    /* Navigation Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: transparent;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 2px;
+        margin-bottom: 24px;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        height: auto;
+        padding: 10px 18px;
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px 12px 0 0;
+        color: #64748b;
+        font-weight: 600;
+        font-size: 0.92rem;
+        transition: all 0.2s ease;
+    }
+
+    .stTabs [data-baseweb="tab"]:hover {
+        color: #4f46e5;
+        background-color: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    .stTabs [aria-selected="true"] {
+        background-color: #ffffff !important;
+        color: #4f46e5 !important;
+        border-color: #e2e8f0 #e2e8f0 #ffffff #e2e8f0 !important;
+        border-top: 3px solid #4f46e5 !important;
+        font-weight: 700 !important;
+        box-shadow: 0 -4px 12px rgba(79, 70, 229, 0.05);
+    }
+    
+    /* Risk Badges (Light Theme High-Contrast) */
     .badge-critical {
-        background: rgba(239, 68, 68, 0.2);
-        color: #fca5a5;
-        border: 1px solid rgba(239, 68, 68, 0.5);
-        padding: 6px 14px;
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fca5a5;
+        padding: 6px 16px;
         border-radius: 9999px;
         font-weight: 700;
-        font-size: 0.85rem;
+        font-size: 0.88rem;
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.12);
     }
     
     .badge-high {
-        background: rgba(249, 115, 22, 0.2);
-        color: #fdba74;
-        border: 1px solid rgba(249, 115, 22, 0.5);
-        padding: 6px 14px;
+        background: #ffedd5;
+        color: #9a3412;
+        border: 1px solid #fdba74;
+        padding: 6px 16px;
         border-radius: 9999px;
         font-weight: 700;
-        font-size: 0.85rem;
+        font-size: 0.88rem;
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        box-shadow: 0 2px 6px rgba(249, 115, 22, 0.12);
     }
     
     .badge-medium {
-        background: rgba(234, 179, 8, 0.2);
-        color: #fde047;
-        border: 1px solid rgba(234, 179, 8, 0.5);
-        padding: 6px 14px;
+        background: #fef3c7;
+        color: #854d0e;
+        border: 1px solid #fde047;
+        padding: 6px 16px;
         border-radius: 9999px;
         font-weight: 700;
-        font-size: 0.85rem;
+        font-size: 0.88rem;
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        box-shadow: 0 2px 6px rgba(234, 179, 8, 0.12);
     }
     
     .badge-low {
-        background: rgba(34, 197, 94, 0.2);
-        color: #86efac;
-        border: 1px solid rgba(34, 197, 94, 0.5);
-        padding: 6px 14px;
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #86efac;
+        padding: 6px 16px;
         border-radius: 9999px;
         font-weight: 700;
-        font-size: 0.85rem;
+        font-size: 0.88rem;
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        box-shadow: 0 2px 6px rgba(34, 197, 94, 0.12);
     }
 
-    /* Metric pill */
+    /* Metric Pills */
     .metric-pill {
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 12px;
-        padding: 14px 18px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 18px 20px;
         text-align: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .metric-pill:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+        border-color: #cbd5e1;
     }
     
     .metric-pill-val {
-        font-size: 1.6rem;
+        font-size: 1.75rem;
         font-weight: 800;
-        color: #f8fafc;
+        color: #0f172a;
+        line-height: 1.2;
     }
     
     .metric-pill-lbl {
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #94a3b8;
-        margin-top: 4px;
+        letter-spacing: 0.06em;
+        color: #64748b;
+        margin-top: 6px;
+        font-weight: 600;
     }
     
-    /* Highlight item in explanations */
+    /* Highlight item in explainable AI signals */
     .reason-item {
-        background: rgba(15, 23, 42, 0.5);
-        border-left: 3px solid #6366f1;
-        padding: 10px 14px;
-        margin-bottom: 8px;
-        border-radius: 0 8px 8px 0;
-        font-size: 0.92rem;
-        color: #e2e8f0;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid #4f46e5;
+        padding: 12px 16px;
+        margin-bottom: 10px;
+        border-radius: 0 12px 12px 0;
+        font-size: 0.94rem;
+        color: #1e293b;
+        font-weight: 500;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        transition: transform 0.15s ease;
+    }
+
+    .reason-item:hover {
+        transform: translateX(3px);
+        border-left-color: #4338ca;
+        background: #f8fafc;
     }
     
+    /* Streamlit Form Container */
+    [data-testid="stForm"] {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.03);
+    }
+
     /* Buttons */
-    .stButton>button {
+    .stButton > button {
         border-radius: 10px;
         font-weight: 600;
-        transition: all 0.2s ease;
+        font-size: 0.92rem;
+        padding: 8px 18px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+        color: #ffffff;
+        border: none;
+        box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+    }
+
+    .stButton > button[kind="primary"]:hover {
+        background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+        box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45);
+        transform: translateY(-1px);
+    }
+
+    .stButton > button[kind="secondary"] {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #334155;
+    }
+
+    .stButton > button[kind="secondary"]:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: #0f172a;
+    }
+
+    /* Radio button custom styling */
+    .stRadio > div {
+        background: #ffffff;
+        padding: 6px 10px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Preset Buttons Container */
+    .preset-container {
+        display: flex;
+        gap: 8px;
+    }
+
+    /* Dataframe wrapper styling */
+    [data-testid="stDataFrame"] {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #ffffff;
+    }
+
     /* Fix Plotly background in Streamlit */
     .js-plotly-plot .plotly .main-svg {
         background: transparent !important;
+    }
+
+    /* Footer */
+    .app-footer {
+        text-align: center;
+        color: #64748b;
+        font-size: 0.88rem;
+        padding: 24px 0 12px 0;
+        font-weight: 500;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -267,13 +503,13 @@ models_bundle = load_models_and_metadata()
 # ===================== HELPER FUNCTIONS =====================
 def get_risk_tier(prob: float):
     if prob >= 0.85:
-        return "critical", "Critical Risk", "#EF4444", "badge-critical"
+        return "critical", "Critical Risk", "#DC2626", "badge-critical"
     elif prob >= 0.65:
-        return "high", "High Risk", "#F97316", "badge-high"
+        return "high", "High Risk", "#EA580C", "badge-high"
     elif prob >= 0.45:
-        return "medium", "Medium Risk", "#EAB308", "badge-medium"
+        return "medium", "Medium Risk", "#CA8A04", "badge-medium"
     else:
-        return "low", "Low Risk (Genuine)", "#22C55E", "badge-low"
+        return "low", "Low Risk (Genuine)", "#16A34A", "badge-low"
 
 def generate_explanations(platform: str, inputs: dict, is_fake: bool) -> list:
     """Explainable AI (XAI) feature signals generator."""
@@ -349,11 +585,12 @@ def record_prediction(platform: str, username: str, followers: float, following:
         conn.commit()
 
 # ===================== UI HEADER =====================
-col_h1, col_h2 = st.columns([3.5, 1.5])
+col_h1, col_h2 = st.columns([3.4, 1.6])
 with col_h1:
     st.markdown("""
     <div class="hero-banner">
-        <h1 class="hero-title">🛡️ FakeGuard AI Platform</h1>
+        <div class="hero-badge">🛡️ AI-POWERED THREAT DETECTION</div>
+        <h1 class="hero-title">FakeGuard AI Platform</h1>
         <p class="hero-subtitle">
             Enterprise-grade Fake Profile & Synthetic Identity Detection powered by 
             <strong>XGBoost</strong> and <strong>Random Forest</strong> algorithms.
@@ -362,18 +599,19 @@ with col_h1:
     """, unsafe_allow_html=True)
 
 with col_h2:
-    status_color = "#22C55E" if models_bundle["ready"] else "#EF4444"
+    status_color = "#16A34A" if models_bundle["ready"] else "#DC2626"
     status_text = "Models Online" if models_bundle["ready"] else "Loading Failed"
     insta_name = models_bundle.get("insta_meta", {}).get("best_model", "XGBoost")
     tw_name = models_bundle.get("twitter_meta", {}).get("best_model", "Random Forest")
     st.markdown(f"""
-    <div class="glass-card" style="padding: 16px 20px; text-align: center;">
-        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px;">
-            <span style="height: 10px; width: 10px; border-radius: 50%; background: {status_color}; display: inline-block;"></span>
-            <span style="font-weight: 700; color: #f8fafc; font-size: 0.95rem;">{status_text}</span>
+    <div class="glass-card header-status-card">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px;">
+            <span class="pulse-dot" style="background: {status_color};"></span>
+            <span style="font-weight: 700; color: #0f172a; font-size: 0.98rem;">{status_text}</span>
         </div>
-        <div style="font-size: 0.78rem; color: #94a3b8;">
-            Instagram: <strong style="color: #c084fc;">{insta_name}</strong> | Twitter: <strong style="color: #38bdf8;">{tw_name}</strong>
+        <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 4px;">
+            <span class="platform-chip insta-chip">📷 Instagram: <strong>{insta_name}</strong></span>
+            <span class="platform-chip tw-chip">🐦 Twitter: <strong>{tw_name}</strong></span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -546,15 +784,17 @@ with tabs[0]:
             tier_code, tier_label, tier_color, badge_class = get_risk_tier(prob)
             is_fake = pred == 1
             verdict_text = "⚠️ FAKE / SYNTHETIC ACCOUNT DETECTED" if is_fake else "✅ GENUINE / AUTHENTIC PROFILE"
-            verdict_color = "#EF4444" if is_fake else "#22C55E"
+            verdict_color = "#DC2626" if is_fake else "#16A34A"
+            card_bg = "linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%)" if is_fake else "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)"
+            card_border = "#fecdd3" if is_fake else "#bbf7d0"
             
             st.markdown("---")
             st.markdown(f"""
-            <div class="glass-card" style="border-left: 6px solid {verdict_color};">
+            <div style="background: {card_bg}; border: 1px solid {card_border}; border-left: 6px solid {verdict_color}; border-radius: 18px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                     <div>
-                        <span style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8;">Analysis Result for @{username or 'user'}</span>
-                        <h2 style="color: {verdict_color}; margin: 4px 0 0 0; font-size: 1.8rem; font-weight: 800;">{verdict_text}</h2>
+                        <span style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; font-weight: 600;">Analysis Result for @{username or 'user'}</span>
+                        <h2 style="color: {verdict_color}; margin: 4px 0 0 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em;">{verdict_text}</h2>
                     </div>
                     <div>
                         <span class="{badge_class}">{tier_label} ({prob*100:.1f}%)</span>
@@ -567,26 +807,26 @@ with tabs[0]:
             col_res1, col_res2 = st.columns([1.8, 2.2])
             
             with col_res1:
-                # Gauge Chart using Plotly
+                # Gauge Chart using Plotly with Light Theme
                 fig_gauge = go.Figure(go.Indicator(
                     mode="gauge+number",
                     value=round(prob * 100, 1),
-                    number={'suffix': "%", 'font': {'size': 38, 'color': tier_color}},
-                    title={'text': "Fake Risk Probability", 'font': {'size': 16, 'color': '#94a3b8'}},
+                    number={'suffix': "%", 'font': {'size': 36, 'color': tier_color, 'family': 'Plus Jakarta Sans'}},
+                    title={'text': "Fake Risk Probability", 'font': {'size': 16, 'color': '#334155', 'family': 'Plus Jakarta Sans'}},
                     gauge={
-                        'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#475569"},
+                        'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#94a3b8", 'tickfont': {'color': '#64748b'}},
                         'bar': {'color': tier_color, 'thickness': 0.28},
-                        'bgcolor': "rgba(15, 23, 42, 0.6)",
+                        'bgcolor': "#f1f5f9",
                         'borderwidth': 1,
-                        'bordercolor': "#334155",
+                        'bordercolor': "#e2e8f0",
                         'steps': [
                             {'range': [0, 45], 'color': "rgba(34, 197, 94, 0.15)"},
                             {'range': [45, 65], 'color': "rgba(234, 179, 8, 0.15)"},
                             {'range': [65, 85], 'color': "rgba(249, 115, 22, 0.15)"},
-                            {'range': [85, 100], 'color': "rgba(239, 68, 68, 0.2)"}
+                            {'range': [85, 100], 'color': "rgba(239, 68, 68, 0.15)"}
                         ],
                         'threshold': {
-                            'line': {'color': "#EF4444", 'width': 3},
+                            'line': {'color': "#DC2626", 'width': 3},
                             'thickness': 0.8,
                             'value': 50
                         }
@@ -613,14 +853,17 @@ with tabs[0]:
                 df_imp = pd.DataFrame(list(feat_imp.items()), columns=["Feature", "Weight"]).sort_values("Weight", ascending=True)
                 fig_imp = px.bar(
                     df_imp, x="Weight", y="Feature", orientation="h",
-                    color="Weight", color_continuous_scale="Purp",
+                    color="Weight", color_continuous_scale="Purples",
                     labels={"Weight": "Relative Importance", "Feature": ""},
                     height=280
                 )
                 fig_imp.update_layout(
                     paper_bgcolor="rgba(0,0,0,0)",
                     plot_bgcolor="rgba(0,0,0,0)",
-                    font_color="#cbd5e1",
+                    font_color="#334155",
+                    font_family="Plus Jakarta Sans",
+                    xaxis=dict(gridcolor="#f1f5f9"),
+                    yaxis=dict(gridcolor="#f1f5f9"),
                     margin=dict(l=10, r=10, t=10, b=10),
                     coloraxis_showscale=False
                 )
@@ -741,17 +984,23 @@ with tabs[1]:
                 st.markdown("#### 📊 Batch Screening Overview")
                 m1, m2, m3, m4 = st.columns(4)
                 m1.markdown(f'<div class="metric-pill"><div class="metric-pill-val">{total_cnt}</div><div class="metric-pill-lbl">Profiles Scanned</div></div>', unsafe_allow_html=True)
-                m2.markdown(f'<div class="metric-pill"><div class="metric-pill-val" style="color: #EF4444;">{fake_cnt}</div><div class="metric-pill-lbl">Fake Profiles ({fake_rate:.1f}%)</div></div>', unsafe_allow_html=True)
-                m3.markdown(f'<div class="metric-pill"><div class="metric-pill-val" style="color: #22C55E;">{real_cnt}</div><div class="metric-pill-lbl">Genuine Profiles</div></div>', unsafe_allow_html=True)
+                m2.markdown(f'<div class="metric-pill"><div class="metric-pill-val" style="color: #DC2626;">{fake_cnt}</div><div class="metric-pill-lbl">Fake Profiles ({fake_rate:.1f}%)</div></div>', unsafe_allow_html=True)
+                m3.markdown(f'<div class="metric-pill"><div class="metric-pill-val" style="color: #16A34A;">{real_cnt}</div><div class="metric-pill-lbl">Genuine Profiles</div></div>', unsafe_allow_html=True)
                 m4.markdown(f'<div class="metric-pill"><div class="metric-pill-val">{res_df["Raw Score"].mean()*100:.1f}%</div><div class="metric-pill-lbl">Average Risk Score</div></div>', unsafe_allow_html=True)
 
-                # Pie Chart
+                # Pie Chart with light styling
                 fig_pie = px.pie(
                     res_df, names="Verdict", title="Batch Account Classification Breakdown",
-                    color="Verdict", color_discrete_map={"Fake": "#EF4444", "Genuine": "#22C55E"},
+                    color="Verdict", color_discrete_map={"Fake": "#DC2626", "Genuine": "#16A34A"},
                     hole=0.45
                 )
-                fig_pie.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
+                fig_pie.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font_color="#1e293b",
+                    font_family="Plus Jakarta Sans",
+                    title_font_color="#0f172a"
+                )
                 st.plotly_chart(fig_pie, use_container_width=True)
 
                 st.markdown("#### 📋 Detailed Batch Output Table")
@@ -788,8 +1037,8 @@ with tabs[2]:
             
             c1, c2, c3, c4 = st.columns(4)
             c1.markdown(f'<div class="metric-pill"><div class="metric-pill-val">{total_scans}</div><div class="metric-pill-lbl">Total Scans Performed</div></div>', unsafe_allow_html=True)
-            c2.markdown(f'<div class="metric-pill"><div class="metric-pill-val" style="color: #EF4444;">{fake_total}</div><div class="metric-pill-lbl">Fake Detections ({fake_total/total_scans*100:.1f}%)</div></div>', unsafe_allow_html=True)
-            c3.markdown(f'<div class="metric-pill"><div class="metric-pill-val" style="color: #22C55E;">{real_total}</div><div class="metric-pill-lbl">Genuine Profiles</div></div>', unsafe_allow_html=True)
+            c2.markdown(f'<div class="metric-pill"><div class="metric-pill-val" style="color: #DC2626;">{fake_total}</div><div class="metric-pill-lbl">Fake Detections ({fake_total/total_scans*100:.1f}%)</div></div>', unsafe_allow_html=True)
+            c3.markdown(f'<div class="metric-pill"><div class="metric-pill-val" style="color: #16A34A;">{real_total}</div><div class="metric-pill-lbl">Genuine Profiles</div></div>', unsafe_allow_html=True)
             c4.markdown(f'<div class="metric-pill"><div class="metric-pill-val">{avg_p*100:.1f}%</div><div class="metric-pill-lbl">Average Risk Score</div></div>', unsafe_allow_html=True)
 
             col_ch1, col_ch2 = st.columns(2)
@@ -803,10 +1052,18 @@ with tabs[2]:
                     df_plat, x="platform", y=["genuine_count", "fake_count"],
                     barmode="group",
                     title="Platform Detections (Genuine vs Fake)",
-                    color_discrete_map={"genuine_count": "#22C55E", "fake_count": "#EF4444"},
+                    color_discrete_map={"genuine_count": "#16A34A", "fake_count": "#DC2626"},
                     labels={"value": "Number of Accounts", "variable": "Type", "platform": "Platform"}
                 )
-                fig_pbar.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
+                fig_pbar.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font_color="#1e293b",
+                    font_family="Plus Jakarta Sans",
+                    title_font_color="#0f172a",
+                    xaxis=dict(gridcolor="#f1f5f9"),
+                    yaxis=dict(gridcolor="#f1f5f9")
+                )
                 st.plotly_chart(fig_pbar, use_container_width=True)
 
             # Risk Distribution Chart
@@ -816,10 +1073,16 @@ with tabs[2]:
                     df_risk, names="risk_level", values="count",
                     title="Threat Risk Tier Breakdown",
                     color="risk_level",
-                    color_discrete_map={"critical": "#EF4444", "high": "#F97316", "medium": "#EAB308", "low": "#22C55E"},
+                    color_discrete_map={"critical": "#DC2626", "high": "#EA580C", "medium": "#CA8A04", "low": "#16A34A"},
                     hole=0.4
                 )
-                fig_rpie.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
+                fig_rpie.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font_color="#1e293b",
+                    font_family="Plus Jakarta Sans",
+                    title_font_color="#0f172a"
+                )
                 st.plotly_chart(fig_rpie, use_container_width=True)
 
             # Recent scans list
@@ -895,10 +1158,12 @@ with tabs[4]:
         insta_m = models_bundle.get("insta_meta", {})
         res_i = insta_m.get("results", {})
         st.markdown(f"""
-        <div class="glass-card" style="border-top: 4px solid #C084FC;">
-            <h3 style="color: #C084FC; margin-top: 0;">📷 Instagram Classifier</h3>
-            <p style="color: #cbd5e1; font-size: 0.9rem;">
-                <strong>Active Algorithm:</strong> {insta_m.get('best_model', 'XGBoost')}<br>
+        <div class="glass-card" style="border-top: 4px solid #9333ea;">
+            <h3 style="color: #9333ea; margin-top: 0; display: flex; align-items: center; gap: 8px;">
+                <span>📷</span> Instagram Classifier
+            </h3>
+            <p style="color: #334155; font-size: 0.92rem; line-height: 1.6;">
+                <strong>Active Algorithm:</strong> <span style="color: #7e22ce; font-weight: 700;">{insta_m.get('best_model', 'XGBoost')}</span><br>
                 <strong>Training Dataset:</strong> instagram1 + instagram2 (5,052 profiles)<br>
                 <strong>Feature Dimensions:</strong> 11 behavioral & metadata signals
             </p>
@@ -915,10 +1180,12 @@ with tabs[4]:
         tw_m = models_bundle.get("twitter_meta", {})
         res_t = tw_m.get("results", {})
         st.markdown(f"""
-        <div class="glass-card" style="border-top: 4px solid #38BDF8;">
-            <h3 style="color: #38BDF8; margin-top: 0;">🐦 Twitter / X Bot Detector</h3>
-            <p style="color: #cbd5e1; font-size: 0.9rem;">
-                <strong>Active Algorithm:</strong> {tw_m.get('best_model', 'Random Forest')}<br>
+        <div class="glass-card" style="border-top: 4px solid #0284c7;">
+            <h3 style="color: #0284c7; margin-top: 0; display: flex; align-items: center; gap: 8px;">
+                <span>🐦</span> Twitter / X Bot Detector
+            </h3>
+            <p style="color: #334155; font-size: 0.92rem; line-height: 1.6;">
+                <strong>Active Algorithm:</strong> <span style="color: #0369a1; font-weight: 700;">{tw_m.get('best_model', 'Random Forest')}</span><br>
                 <strong>Training Dataset:</strong> twitter1 bot_detection_data (50,000 tweets)<br>
                 <strong>Feature Dimensions:</strong> 4 engagement & account verification signals
             </p>
@@ -955,7 +1222,7 @@ with tabs[4]:
 # ===================== FOOTER =====================
 st.markdown("---")
 st.markdown("""
-<div style="text-align: center; color: #64748b; font-size: 0.85rem; padding: 15px 0;">
-    FakeGuard AI Platform • Multi-Platform Fake Profile Detection • Built with Streamlit, FastAPI, XGBoost & Scikit-Learn
+<div class="app-footer">
+    FakeGuard AI Platform • Enterprise-grade Fake Profile & Synthetic Identity Detection • Built with Streamlit, FastAPI, XGBoost & Scikit-Learn
 </div>
 """, unsafe_allow_html=True)
