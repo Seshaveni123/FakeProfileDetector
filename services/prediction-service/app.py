@@ -12,7 +12,7 @@ import time
 from typing import Literal, Optional
 
 import httpx
-import numpy as np
+import pandas as pd
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
@@ -37,6 +37,20 @@ with open(os.path.join(MODEL_DIR, "twitter_scaler.pkl"), "rb") as scaler_file:
     twitter_scaler = pickle.load(scaler_file)
 with open(os.path.join(MODEL_DIR, "twitter_metadata.json"), encoding="utf-8") as metadata_file:
     twitter_metadata = json.load(metadata_file)
+
+
+def validate_model_artifact(model, metadata, expected_features, platform):
+    """Fail fast when a serialized model and its documented input schema differ."""
+    metadata_features = metadata.get("feature_columns")
+    if metadata_features != expected_features:
+        raise RuntimeError(f"{platform} metadata feature schema does not match the service schema")
+    model_features = getattr(model, "n_features_in_", len(expected_features))
+    if model_features != len(expected_features):
+        raise RuntimeError(f"{platform} model expects {model_features} features, not {len(expected_features)}")
+
+
+validate_model_artifact(insta_model, insta_metadata, ["profile pic", "nums/length username", "fullname words", "nums/length fullname", "name==username", "description length", "external URL", "private", "#posts", "#followers", "#follows"], "instagram")
+validate_model_artifact(twitter_model, twitter_metadata, ["Retweet Count", "Mention Count", "Follower Count", "Verified"], "twitter")
 
 metrics = {"predictions_total": 0, "predictions_fake": 0, "predictions_real": 0, "predictions_instagram": 0, "predictions_twitter": 0, "requests_total": 0, "errors_total": 0, "bulk_uploads_total": 0, "request_duration_seconds_sum": 0.0, "request_duration_seconds_count": 0}
 
@@ -110,13 +124,14 @@ def explanation(profile: PredictionRequest, prediction: int) -> list[str]:
 
 def classify(profile: PredictionRequest) -> dict:
     if profile.platform == "instagram":
-        features = np.array([[profile.profile_pic, profile.nums_length_username, profile.fullname_words, profile.nums_length_fullname, profile.name_eq_username, profile.description_length, profile.external_url, profile.private, profile.posts_count, profile.followers_count, profile.following_count]])
         model, metadata = insta_model, insta_metadata
+        values = [profile.profile_pic, profile.nums_length_username, profile.fullname_words, profile.nums_length_fullname, profile.name_eq_username, profile.description_length, profile.external_url, profile.private, profile.posts_count, profile.followers_count, profile.following_count]
         metrics["predictions_instagram"] += 1
     else:
-        features = np.array([[profile.retweet_count, profile.mention_count, profile.follower_count_twitter, profile.verified]])
         model, metadata = twitter_model, twitter_metadata
+        values = [profile.retweet_count, profile.mention_count, profile.follower_count_twitter, profile.verified]
         metrics["predictions_twitter"] += 1
+    features = pd.DataFrame([values], columns=metadata["feature_columns"])
     prediction = int(model.predict(features)[0])
     probability = float(model.predict_proba(features)[0][1])
     level = risk_level(probability)
@@ -171,7 +186,8 @@ async def predict_bulk(file: UploadFile = File(...), platform: Literal["instagra
 @app.get("/model-info")
 def model_info(platform: Optional[Literal["instagram", "twitter"]] = None):
     metadata = {"instagram": insta_metadata, "twitter": twitter_metadata}
-    return {key: {"model_name": value.get("best_model", "Unknown"), "dataset_source": "existing trained dataset", "feature_columns": value.get("feature_columns", []), "feature_names": value.get("feature_names_display", []), "feature_importance": value.get("feature_importance", {}), "training_results": value.get("results", {}), "training_samples": value.get("training_samples", 0), "test_samples": value.get("test_samples", 0), "total_samples": value.get("total_samples", 0)} for key, value in metadata.items() if platform is None or key == platform}
+    models = {"instagram": insta_model, "twitter": twitter_model}
+    return {key: {"model_name": value.get("best_model", "Unknown"), "model_class": type(models[key]).__name__, "dataset_source": "existing trained dataset", "feature_columns": value.get("feature_columns", []), "feature_names": value.get("feature_names_display", []), "feature_importance": value.get("feature_importance", {}), "training_results": value.get("results", {}), "cross_validation_results": value.get("cross_validation_results", {}), "majority_baseline": value.get("majority_baseline", {}), "evaluation": value.get("evaluation", {}), "quality": value.get("quality", {"status": "unknown"}), "training_samples": value.get("training_samples", 0), "test_samples": value.get("test_samples", 0), "total_samples": value.get("total_samples", 0)} for key, value in metadata.items() if platform is None or key == platform}
 
 
 @app.get("/metrics", response_class=PlainTextResponse)

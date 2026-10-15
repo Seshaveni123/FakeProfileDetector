@@ -49,6 +49,51 @@
       ]
     }
   },
+  "cross_validation_results": {
+    "Random Forest": {
+      "accuracy": 0.5056,
+      "precision": 0.5058,
+      "recall": 0.5203,
+      "f1_score": 0.5129,
+      "auc_roc": 0.5063
+    },
+    "XGBoost": {
+      "accuracy": 0.5035,
+      "precision": 0.5038,
+      "recall": 0.5108,
+      "f1_score": 0.5073,
+      "auc_roc": 0.5052
+    }
+  },
+  "majority_baseline": {
+    "model_name": "Majority class baseline",
+    "predicted_class": 1,
+    "accuracy": 0.5004,
+    "precision": 0.5004,
+    "recall": 1.0,
+    "f1_score": 0.667,
+    "auc_roc": 0.5,
+    "confusion_matrix": [
+      [
+        0,
+        4996
+      ],
+      [
+        0,
+        5004
+      ]
+    ]
+  },
+  "evaluation": {
+    "selection_split": "5-fold stratified CV on training data",
+    "test_split": "20% stratified held-out test data",
+    "positive_class": 1,
+    "positive_class_name": "bot/fake"
+  },
+  "quality": {
+    "status": "not_deployable",
+    "reason": "Held-out performance does not beat the majority baseline with useful ROC-AUC; obtain a labelled feature-complete Twitter dataset before relying on predictions."
+  },
   "feature_importance": {
     "Follower Count": 0.6291,
     "Retweet Count": 0.2728,

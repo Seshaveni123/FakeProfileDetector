@@ -1,324 +1,169 @@
-"""
-Train separate ML models for Instagram and Twitter fake profile detection.
-Uses REAL datasets from instagram1/, instagram2/, twitter1/, twitter2/ directories.
-Algorithms: Random Forest (primary) + XGBoost (optional).
-Saves: insta_model.pkl, twitter_model.pkl, scalers, and metadata.
-"""
+"""Reproducibly train the FakeGuard Instagram and Twitter classifiers.
 
-import pandas as pd
-import numpy as np
-import pickle
+Twitter training intentionally uses only ``twitter1``: it is the only bundled
+source that contains both the four supported inference features and a label.
+``twitter2`` contains labels but no matching feature records, so it must not be
+joined by row order or used to relabel ``twitter1``.
+"""
+import argparse
 import json
 import os
+import pickle
 import sys
 
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.preprocessing import StandardScaler
+import numpy as np
+import pandas as pd
+from sklearn.base import clone
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score, f1_score,
-    classification_report, confusion_matrix, roc_auc_score
-)
+from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score, roc_auc_score
+from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
+from sklearn.preprocessing import StandardScaler
 
 try:
     from xgboost import XGBClassifier
     HAS_XGBOOST = True
 except ImportError:
     HAS_XGBOOST = False
-    print("⚠️  XGBoost not installed. Using Random Forest only.")
+
+RANDOM_STATE = 42
+INSTA_FEATURE_COLUMNS = ['profile pic', 'nums/length username', 'fullname words', 'nums/length fullname', 'name==username', 'description length', 'external URL', 'private', '#posts', '#followers', '#follows']
+INSTA_FEATURE_DISPLAY = ['Profile Pic', 'Nums in Username', 'Fullname Words', 'Nums in Fullname', 'Name == Username', 'Description Length', 'External URL', 'Private Account', 'Posts Count', 'Followers', 'Following']
+TWITTER_FEATURE_COLUMNS = ['Retweet Count', 'Mention Count', 'Follower Count', 'Verified']
+TWITTER_FEATURE_DISPLAY = ['Retweet Count', 'Mention Count', 'Follower Count', 'Verified']
 
 
-# ===================== FEATURE DEFINITIONS =====================
+def metrics_from_predictions(y_true, y_pred, y_probability):
+    """Compute all binary metrics with label 1 consistently meaning bot/fake."""
+    return {
+        'accuracy': round(float(accuracy_score(y_true, y_pred)), 4),
+        'precision': round(float(precision_score(y_true, y_pred, pos_label=1, zero_division=0)), 4),
+        'recall': round(float(recall_score(y_true, y_pred, pos_label=1, zero_division=0)), 4),
+        'f1_score': round(float(f1_score(y_true, y_pred, pos_label=1, zero_division=0)), 4),
+        'auc_roc': round(float(roc_auc_score(y_true, y_probability)), 4),
+        'confusion_matrix': confusion_matrix(y_true, y_pred, labels=[0, 1]).tolist(),
+    }
 
-# Instagram features (from instagram1 + instagram2 real datasets)
-INSTA_FEATURE_COLUMNS = [
-    'profile pic', 'nums/length username', 'fullname words',
-    'nums/length fullname', 'name==username', 'description length',
-    'external URL', 'private', '#posts', '#followers', '#follows'
-]
 
-INSTA_FEATURE_DISPLAY = [
-    'Profile Pic', 'Nums in Username', 'Fullname Words',
-    'Nums in Fullname', 'Name == Username', 'Description Length',
-    'External URL', 'Private Account', 'Posts Count', 'Followers', 'Following'
-]
-
-# Twitter features (from twitter1 real dataset)  
-TWITTER_FEATURE_COLUMNS = [
-    'Retweet Count', 'Mention Count', 'Follower Count', 'Verified'
-]
-
-TWITTER_FEATURE_DISPLAY = [
-    'Retweet Count', 'Mention Count', 'Follower Count', 'Verified'
-]
+def validate_twitter_frame(raw):
+    """Map the documented Twitter schema and reject incomplete/invalid labels."""
+    required = TWITTER_FEATURE_COLUMNS + ['Bot Label']
+    missing = sorted(set(required) - set(raw.columns))
+    if missing:
+        raise ValueError(f'Twitter dataset is missing required columns: {missing}')
+    frame = raw.copy().rename(columns={'Bot Label': 'is_fake'})
+    frame['Verified'] = frame['Verified'].map({True: 1, False: 0, 'True': 1, 'False': 0, 1: 1, 0: 0})
+    for column in TWITTER_FEATURE_COLUMNS + ['is_fake']:
+        frame[column] = pd.to_numeric(frame[column], errors='coerce')
+    frame = frame.dropna(subset=TWITTER_FEATURE_COLUMNS + ['is_fake']).drop_duplicates()
+    frame['is_fake'] = frame['is_fake'].astype(int)
+    frame['Verified'] = frame['Verified'].astype(int)
+    if set(frame['is_fake'].unique()) != {0, 1}:
+        raise ValueError('Twitter labels must contain exactly 0 (human) and 1 (bot).')
+    return frame
 
 
 def load_instagram_data(base_dir):
-    """Load and merge Instagram datasets from instagram1/ and instagram2/ directories."""
-    print("\n📂 Loading Instagram datasets...")
-
-    dfs = []
-
-    # Load instagram1/Instagram_fake_profile_dataset.csv
-    path1 = os.path.join(base_dir, 'instagram1', 'Instagram_fake_profile_dataset.csv')
-    if os.path.exists(path1):
-        df1 = pd.read_csv(path1)
-        print(f"   ✅ instagram1: {len(df1)} rows")
-        dfs.append(df1)
-    else:
-        print(f"   ❌ Not found: {path1}")
-
-    # Load instagram2/train.csv and instagram2/test.csv
-    path2_train = os.path.join(base_dir, 'instagram2', 'train.csv')
-    path2_test = os.path.join(base_dir, 'instagram2', 'test.csv')
-
-    if os.path.exists(path2_train):
-        df2 = pd.read_csv(path2_train)
-        print(f"   ✅ instagram2/train: {len(df2)} rows")
-        dfs.append(df2)
-
-    if os.path.exists(path2_test):
-        df3 = pd.read_csv(path2_test)
-        print(f"   ✅ instagram2/test: {len(df3)} rows")
-        dfs.append(df3)
-
-    if not dfs:
-        print("   ❌ No Instagram datasets found!")
+    paths = [os.path.join(base_dir, 'instagram1', 'Instagram_fake_profile_dataset.csv'), os.path.join(base_dir, 'instagram2', 'train.csv'), os.path.join(base_dir, 'instagram2', 'test.csv')]
+    frames = [pd.read_csv(path) for path in paths if os.path.exists(path)]
+    if not frames:
         return None
-
-    # Merge all Instagram data
-    combined = pd.concat(dfs, ignore_index=True)
-
-    # Rename 'fake' column to 'is_fake' for consistency
-    if 'fake' in combined.columns:
-        combined = combined.rename(columns={'fake': 'is_fake'})
-
-    # Drop duplicates
-    combined = combined.drop_duplicates()
-
-    # Compute engineered features
-    combined['follower_ratio'] = combined['#followers'] / combined['#follows'].replace(0, 1)
-
-    print(f"\n📊 Instagram combined: {len(combined)} samples")
-    print(f"   Real: {len(combined[combined['is_fake']==0])} | Fake: {len(combined[combined['is_fake']==1])}")
-
-    return combined
+    frame = pd.concat(frames, ignore_index=True).rename(columns={'fake': 'is_fake'}).drop_duplicates()
+    frame['follower_ratio'] = frame['#followers'] / frame['#follows'].replace(0, 1)
+    return frame
 
 
 def load_twitter_data(base_dir):
-    """Load Twitter dataset from twitter1/ directory.
-    
-    twitter1/bot_detection_data.csv has columns:
-    User ID, Username, Tweet, Retweet Count, Mention Count, 
-    Follower Count, Verified, Bot Label, Location, Created At, Hashtags
-    """
-    print("\n📂 Loading Twitter datasets...")
-
-    # Load twitter1 (main dataset with features)
-    path1 = os.path.join(base_dir, 'twitter1', 'bot_detection_data.csv')
-    if not os.path.exists(path1):
-        print(f"   ❌ Not found: {path1}")
+    path = os.path.join(base_dir, 'twitter1', 'bot_detection_data.csv')
+    if not os.path.exists(path):
         return None
+    frame = validate_twitter_frame(pd.read_csv(path))
+    print(f'Twitter samples: {len(frame)}; human={int((frame.is_fake == 0).sum())}; bot={int((frame.is_fake == 1).sum())}')
+    return frame
 
-    df = pd.read_csv(path1)
-    print(f"   ✅ twitter1: {len(df)} rows")
 
-    # Rename Bot Label to is_fake
-    if 'Bot Label' in df.columns:
-        df = df.rename(columns={'Bot Label': 'is_fake'})
-
-    # Convert Verified column: True/False → 1/0
-    if 'Verified' in df.columns:
-        df['Verified'] = df['Verified'].map({True: 1, False: 0, 'True': 1, 'False': 0}).fillna(0).astype(int)
-
-    # Load twitter2 for additional bot labels (just id + account_type)
-    path2 = os.path.join(base_dir, 'twitter2', 'twitter_human_bots_dataset.csv')
-    if os.path.exists(path2):
-        df2 = pd.read_csv(path2)
-        bot_count = len(df2[df2['account_type'] == 'bot'])
-        human_count = len(df2[df2['account_type'] == 'human'])
-        print(f"   ✅ twitter2: {len(df2)} rows (bot={bot_count}, human={human_count})")
-        print(f"   ℹ️  twitter2 has only id+type, used twitter1 for features")
-
-    # Drop rows with missing values in feature columns
-    df = df.dropna(subset=TWITTER_FEATURE_COLUMNS + ['is_fake'])
-
-    # Drop duplicates
-    df = df.drop_duplicates()
-
-    print(f"\n📊 Twitter dataset: {len(df)} samples")
-    print(f"   Real: {len(df[df['is_fake']==0])} | Bot/Fake: {len(df[df['is_fake']==1])}")
-
-    return df
+def candidate_models():
+    models = {'Random Forest': RandomForestClassifier(n_estimators=200, max_depth=15, min_samples_split=5, min_samples_leaf=2, random_state=RANDOM_STATE, n_jobs=-1)}
+    if HAS_XGBOOST:
+        models['XGBoost'] = XGBClassifier(n_estimators=200, max_depth=8, learning_rate=0.1, random_state=RANDOM_STATE, eval_metric='logloss')
+    return models
 
 
 def train_platform_model(df, feature_columns, feature_display, target_col, platform_name):
-    """Train models for a specific platform and return best model + metadata."""
-    print(f"\n{'='*60}")
-    print(f"🚀 TRAINING {platform_name.upper()} MODEL")
-    print(f"{'='*60}")
+    """Select by CV on training data then evaluate the selected model once."""
+    X = df[feature_columns].copy()
+    y = df[target_col].astype(int).copy()
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=RANDOM_STATE)
 
-    X = df[feature_columns].values
-    y = df[target_col].values
-
-    # Train/test split (80/20, stratified)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
-
-    # Scale features
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-
-    print(f"📊 Dataset: {len(df)} total | {len(X_train)} train | {len(X_test)} test")
-    print(f"📊 Features: {len(feature_columns)}")
-    print(f"📊 Features list: {feature_columns}")
-
-    # ===================== DEFINE MODELS =====================
-    models = {
-        'Random Forest': RandomForestClassifier(
-            n_estimators=200, max_depth=15, min_samples_split=5,
-            min_samples_leaf=2, random_state=42, n_jobs=-1
-        ),
-    }
-
-    if HAS_XGBOOST:
-        models['XGBoost'] = XGBClassifier(
-            n_estimators=200, max_depth=8, learning_rate=0.1,
-            random_state=42, eval_metric='logloss'
-        )
-
-    results = {}
-    best_model = None
-    best_score = 0
-    best_name = ""
-
-    # ===================== TRAIN & EVALUATE =====================
+    # Kept for artifact/API compatibility. Tree models below use the raw schema.
+    scaler = StandardScaler().fit(X_train)
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+    scoring = {'accuracy': 'accuracy', 'precision': 'precision', 'recall': 'recall', 'f1_score': 'f1', 'auc_roc': 'roc_auc'}
+    cv_results = {}
+    best_name, best_cv_f1 = None, float('-inf')
+    models = candidate_models()
     for name, model in models.items():
-        print(f"\n🔄 Training {name}...")
+        scores = cross_validate(clone(model), X_train, y_train, cv=cv, scoring=scoring, n_jobs=-1)
+        cv_results[name] = {metric: round(float(scores[f'test_{metric}'].mean()), 4) for metric in scoring}
+        if cv_results[name]['f1_score'] > best_cv_f1:
+            best_name, best_cv_f1 = name, cv_results[name]['f1_score']
 
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
-        y_proba = model.predict_proba(X_test)[:, 1]
+    # Report each candidate once on the held-out partition. These values are
+    # never used for selection; ``best_name`` above was chosen from CV only.
+    held_out_results = {}
+    model = None
+    for name, candidate in models.items():
+        fitted = clone(candidate).fit(X_train, y_train)
+        positive_index = list(fitted.classes_).index(1)
+        held_out_results[name] = metrics_from_predictions(y_test, fitted.predict(X_test), fitted.predict_proba(X_test)[:, positive_index])
+        if name == best_name:
+            model = fitted
+    result = held_out_results[best_name]
+    majority_class = int(y_train.mode().iat[0])
+    baseline = {'model_name': 'Majority class baseline', 'predicted_class': majority_class, **metrics_from_predictions(y_test, np.full(len(y_test), majority_class), np.full(len(y_test), float(y_train.mean())))}
+    quality = {'status': 'deployable', 'reason': None}
+    if result['accuracy'] <= baseline['accuracy'] or result['auc_roc'] < 0.55:
+        quality = {'status': 'not_deployable', 'reason': 'Held-out performance does not beat the majority baseline with useful ROC-AUC; obtain a labelled feature-complete Twitter dataset before relying on predictions.'}
 
-        acc = accuracy_score(y_test, y_pred)
-        prec = precision_score(y_test, y_pred)
-        rec = recall_score(y_test, y_pred)
-        f1 = f1_score(y_test, y_pred)
-        auc = roc_auc_score(y_test, y_proba)
-        cm = confusion_matrix(y_test, y_pred)
-
-        results[name] = {
-            'accuracy': round(acc, 4),
-            'precision': round(prec, 4),
-            'recall': round(rec, 4),
-            'f1_score': round(f1, 4),
-            'auc_roc': round(auc, 4),
-            'confusion_matrix': cm.tolist()
-        }
-
-        print(f"   ✅ Accuracy:  {acc:.4f}")
-        print(f"   📊 Precision: {prec:.4f}")
-        print(f"   🔍 Recall:    {rec:.4f}")
-        print(f"   ⚡ F1 Score:  {f1:.4f}")
-        print(f"   📈 AUC-ROC:   {auc:.4f}")
-
-        if f1 > best_score:
-            best_score = f1
-            best_model = model
-            best_name = name
-
-    print(f"\n🏆 Best Model for {platform_name}: {best_name} (F1: {best_score:.4f})")
-
-    # ===================== FEATURE IMPORTANCE =====================
-    feature_importance = {}
-    if hasattr(best_model, 'feature_importances_'):
-        importances = best_model.feature_importances_
-        for fname, imp in zip(feature_display, importances):
-            feature_importance[fname] = round(float(imp), 4)
-
-        feature_importance = dict(
-            sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)
-        )
-
-        print(f"\n📊 Top 5 Features for {platform_name}:")
-        for i, (fname, imp) in enumerate(feature_importance.items()):
-            if i >= 5:
-                break
-            bar = '█' * int(imp * 50)
-            print(f"   {i+1}. {fname}: {imp:.4f}  {bar}")
-
-    # ===================== BUILD METADATA =====================
+    importance = {}
+    if hasattr(model, 'feature_importances_'):
+        importance = dict(sorted(((display, round(float(value), 4)) for display, value in zip(feature_display, model.feature_importances_)), key=lambda item: item[1], reverse=True))
     metadata = {
-        'platform': platform_name,
-        'best_model': best_name,
-        'feature_columns': feature_columns,
-        'feature_names_display': feature_display,
-        'results': results,
-        'feature_importance': feature_importance,
-        'needs_scaling': False,
-        'training_samples': len(X_train),
-        'test_samples': len(X_test),
-        'total_samples': len(df),
+        'platform': platform_name, 'best_model': best_name, 'feature_columns': feature_columns, 'feature_names_display': feature_display,
+        'results': held_out_results, 'cross_validation_results': cv_results, 'majority_baseline': baseline,
+        'evaluation': {'selection_split': '5-fold stratified CV on training data', 'test_split': '20% stratified held-out test data', 'positive_class': 1, 'positive_class_name': 'bot/fake'},
+        'quality': quality, 'feature_importance': importance, 'needs_scaling': False,
+        'training_samples': len(X_train), 'test_samples': len(X_test), 'total_samples': len(df),
     }
-
-    return best_model, scaler, metadata
+    return model, scaler, metadata
 
 
 def save_model(model, scaler, metadata, model_dir, platform_name):
-    """Save model, scaler, and metadata to disk."""
     os.makedirs(model_dir, exist_ok=True)
-
-    model_path = os.path.join(model_dir, f'{platform_name}_model.pkl')
-    with open(model_path, 'wb') as f:
-        pickle.dump(model, f)
-    print(f"💾 Model saved:    {model_path}")
-
-    scaler_path = os.path.join(model_dir, f'{platform_name}_scaler.pkl')
-    with open(scaler_path, 'wb') as f:
-        pickle.dump(scaler, f)
-    print(f"💾 Scaler saved:   {scaler_path}")
-
-    meta_path = os.path.join(model_dir, f'{platform_name}_metadata.json')
-    with open(meta_path, 'w') as f:
-        json.dump(metadata, f, indent=2)
-    print(f"💾 Metadata saved: {meta_path}")
+    for suffix, value in [('model.pkl', model), ('scaler.pkl', scaler)]:
+        with open(os.path.join(model_dir, f'{platform_name}_{suffix}'), 'wb') as handle:
+            pickle.dump(value, handle)
+    with open(os.path.join(model_dir, f'{platform_name}_metadata.json'), 'w', encoding='utf-8') as handle:
+        json.dump(metadata, handle, indent=2)
 
 
-if __name__ == "__main__":
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    # Go up one level from ml/ to project root
-    project_root = os.path.join(base_dir, '..')
-    model_dir = os.path.join(project_root, 'backend', 'models')
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--platform', choices=['instagram', 'twitter', 'all'], default='all')
+    args = parser.parse_args()
+    root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    model_dir = os.path.join(root, 'backend', 'models')
+    jobs = []
+    if args.platform in ('instagram', 'all'):
+        jobs.append(('insta', load_instagram_data(root), INSTA_FEATURE_COLUMNS, INSTA_FEATURE_DISPLAY, 'instagram'))
+    if args.platform in ('twitter', 'all'):
+        jobs.append(('twitter', load_twitter_data(root), TWITTER_FEATURE_COLUMNS, TWITTER_FEATURE_DISPLAY, 'twitter'))
+    for artifact_name, frame, columns, display, platform in jobs:
+        if frame is None:
+            raise FileNotFoundError(f'No {platform} training data found')
+        model, scaler, metadata = train_platform_model(frame, columns, display, 'is_fake', platform)
+        save_model(model, scaler, metadata, model_dir, artifact_name)
+        print(f"{platform}: {metadata['best_model']} held-out F1={metadata['results'][metadata['best_model']]['f1_score']:.4f}; quality={metadata['quality']['status']}")
 
-    # ===================== TRAIN INSTAGRAM MODEL =====================
-    insta_df = load_instagram_data(project_root)
-    if insta_df is not None:
-        insta_model, insta_scaler, insta_meta = train_platform_model(
-            insta_df, INSTA_FEATURE_COLUMNS, INSTA_FEATURE_DISPLAY,
-            'is_fake', 'instagram'
-        )
-        save_model(insta_model, insta_scaler, insta_meta, model_dir, 'insta')
-    else:
-        print("❌ Skipping Instagram model — no data found")
-        sys.exit(1)
 
-    # ===================== TRAIN TWITTER MODEL =====================
-    twitter_df = load_twitter_data(project_root)
-    if twitter_df is not None:
-        twitter_model, twitter_scaler, twitter_meta = train_platform_model(
-            twitter_df, TWITTER_FEATURE_COLUMNS, TWITTER_FEATURE_DISPLAY,
-            'is_fake', 'twitter'
-        )
-        save_model(twitter_model, twitter_scaler, twitter_meta, model_dir, 'twitter')
-    else:
-        print("❌ Skipping Twitter model — no data found")
-        sys.exit(1)
-
-    print(f"\n{'='*60}")
-    print("✅ ALL MODELS TRAINED SUCCESSFULLY!")
-    print(f"{'='*60}")
-    print(f"📁 Models saved to: {os.path.abspath(model_dir)}")
-    print(f"   - insta_model.pkl  ({insta_meta['best_model']})")
-    print(f"   - twitter_model.pkl ({twitter_meta['best_model']})")
+if __name__ == '__main__':
+    main()
