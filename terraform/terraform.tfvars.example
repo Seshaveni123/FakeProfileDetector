@@ -1,0 +1,25 @@
+# FakeGuard AI - Example Terraform Variable Definitions
+# Copy this file to terraform.tfvars and customize for your environment.
+# Do NOT commit terraform.tfvars containing sensitive IPs or secrets to Git.
+
+aws_region          = "ap-south-1"
+project_name        = "fakeguard"
+environment         = "dev"
+
+# Networking Configuration
+vpc_cidr            = "10.0.0.0/16"
+public_subnet_cidr  = "10.0.1.0/24"
+private_subnet_cidr = "10.0.2.0/24"
+
+# Security: Restrict SSH to your trusted admin IP/CIDR (e.g. "203.0.113.50/32")
+# Never leave this open to "0.0.0.0/0"
+allowed_ssh_cidr    = "10.0.0.0/16"
+
+# Compute Configuration
+instance_type       = "t3.micro"
+# Optional: leave empty to automatically select the latest official Ubuntu 24.04 LTS AMI in ap-south-1
+ami_id              = ""
+root_volume_size    = 20
+
+# Storage Configuration
+enable_s3_versioning = true

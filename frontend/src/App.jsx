@@ -2,6 +2,33 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api'
 
+async function readApiResponse(response, operation) {
+  const text = await response.text()
+  let data = {}
+
+  if (text.trim()) {
+    try {
+      data = JSON.parse(text)
+    } catch {
+      throw new Error(`${operation} returned an invalid response (HTTP ${response.status})`)
+    }
+  }
+
+  if (!response.ok) {
+    let detail = data.detail
+    if (Array.isArray(detail)) {
+      detail = detail.map(d => d.msg || JSON.stringify(d)).join(', ')
+    } else if (typeof detail === 'object' && detail !== null) {
+      detail = JSON.stringify(detail)
+    }
+    throw new Error(detail || `${operation} failed (HTTP ${response.status})`)
+  }
+  if (!text.trim()) {
+    throw new Error(`${operation} returned an empty response`)
+  }
+  return data
+}
+
 // ===== HELPER COMPONENTS =====
 
 function ConfidenceGauge({ value, color }) {
@@ -168,30 +195,30 @@ export default function App() {
   const fetchDashboard = async () => {
     try {
       const res = await fetch(`${API_BASE}/dashboard`)
-      const data = await res.json()
+      const data = await readApiResponse(res, 'Dashboard request')
       setDashboard(data)
     } catch (err) {
-      addToast('Failed to load dashboard', 'error')
+      addToast(err.message || 'Failed to load dashboard', 'error')
     }
   }
 
   const fetchHistory = async () => {
     try {
       const res = await fetch(`${API_BASE}/history?limit=50`)
-      const data = await res.json()
+      const data = await readApiResponse(res, 'History request')
       setHistory(data)
     } catch (err) {
-      addToast('Failed to load history', 'error')
+      addToast(err.message || 'Failed to load history', 'error')
     }
   }
 
   const fetchModelInfo = async () => {
     try {
       const res = await fetch(`${API_BASE}/model-info`)
-      const data = await res.json()
+      const data = await readApiResponse(res, 'Model information request')
       setModelInfo(data)
     } catch (err) {
-      addToast('Failed to load model info', 'error')
+      addToast(err.message || 'Failed to load model info', 'error')
     }
   }
 
@@ -219,6 +246,8 @@ export default function App() {
           has_url_in_bio: instaForm.has_url_in_bio,
           avg_likes: parseFloat(instaForm.avg_likes) || 0,
           avg_comments: parseFloat(instaForm.avg_comments) || 0,
+          profile_pic: instaForm.has_profile_pic ? 1 : 0,
+          description_length: parseFloat(instaForm.bio_length) || 0,
         }
       } else {
         payload = {
@@ -239,7 +268,7 @@ export default function App() {
           listed_count: parseFloat(twitterForm.listed_count) || 0,
           avg_retweets: parseFloat(twitterForm.avg_retweets) || 0,
           avg_favorites: parseFloat(twitterForm.avg_favorites) || 0,
-          reply_ratio: parseFloat(twitterForm.reply_ratio),
+          reply_ratio: parseFloat(twitterForm.reply_ratio) || 0,
         }
       }
 
@@ -249,12 +278,7 @@ export default function App() {
         body: JSON.stringify(payload),
       })
 
-      if (!res.ok) {
-        const errData = await res.json()
-        throw new Error(errData.detail || 'Prediction failed')
-      }
-
-      const data = await res.json()
+      const data = await readApiResponse(res, 'Prediction request')
       setResult(data)
       addToast(
         data.is_fake ? 'Fake profile detected' : 'Profile appears genuine',
@@ -284,10 +308,7 @@ export default function App() {
         body: formData,
       })
 
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        throw new Error(data.detail || 'Bulk upload failed')
-      }
+      const data = await readApiResponse(res, 'Bulk upload request')
       setBulkResults(data)
       addToast(`Processed ${data.total_profiles} ${platform} profiles!`)
     } catch (err) {
@@ -1038,7 +1059,9 @@ function BulkTab({ platform, setPlatform, handleBulkUpload, loading, bulkResults
               {loading ? 'Processing...' : `Click to upload ${platform} CSV file`}
             </div>
             <div className="upload-zone-hint">
-              Upload a CSV with {platform === 'instagram' ? 'Instagram' : 'Twitter'} profile columns
+              {platform === 'instagram'
+                ? 'Columns: username, followers_count, following_count, bio_length, has_profile_pic'
+                : 'Columns: username, retweet_count, mention_count, follower_count_twitter, verified'}
             </div>
             <input ref={fileInputRef} id="bulk-upload-input" className="upload-input"
               type="file" accept=".csv" onChange={handleBulkUpload} />
@@ -1052,19 +1075,26 @@ function BulkTab({ platform, setPlatform, handleBulkUpload, loading, bulkResults
           <div className="bulk-summary">
             <div className="stat-card">
               <div className="stat-icon blue">T</div>
-              <div className="stat-value">{bulkResults.total_profiles}</div>
+              <div className="stat-value">{bulkResults.total_profiles ?? 0}</div>
               <div className="stat-label">Total</div>
             </div>
             <div className="stat-card">
               <div className="stat-icon red">F</div>
-              <div className="stat-value">{bulkResults.fake_count}</div>
+              <div className="stat-value">{bulkResults.fake_count ?? 0}</div>
               <div className="stat-label">Fake</div>
             </div>
             <div className="stat-card">
               <div className="stat-icon green">R</div>
-              <div className="stat-value">{bulkResults.real_count}</div>
+              <div className="stat-value">{bulkResults.real_count ?? 0}</div>
               <div className="stat-label">Real</div>
             </div>
+            {bulkResults.error_count > 0 && (
+              <div className="stat-card">
+                <div className="stat-icon red" style={{ background: 'rgba(239, 68, 68, 0.2)' }}>!</div>
+                <div className="stat-value">{bulkResults.error_count}</div>
+                <div className="stat-label">Errors</div>
+              </div>
+            )}
           </div>
 
           <div className="glass-card" style={{ marginTop: '24px' }}>
@@ -1076,18 +1106,20 @@ function BulkTab({ platform, setPlatform, handleBulkUpload, loading, bulkResults
                     <tr><th>Username</th><th>Prediction</th><th>Probability</th><th>Risk</th></tr>
                   </thead>
                   <tbody>
-                    {bulkResults.results.map((r, i) => (
+                    {(Array.isArray(bulkResults.results) ? bulkResults.results : []).map((r, i) => (
                       <tr key={i}>
                         <td>{r.username || '-'}</td>
                         <td>
                           {r.error ? (
-                            <span className="badge badge-fake">Error</span>
+                            <span className="badge badge-fake" title={r.error}>
+                              Error: {r.error}
+                            </span>
                           ) : (
-                            <span className={`badge ${r.is_fake ? 'badge-fake' : 'badge-real'}`}>{r.label}</span>
+                            <span className={`badge ${r.is_fake ? 'badge-fake' : 'badge-real'}`}>{r.label || (r.is_fake ? 'Fake' : 'Real')}</span>
                           )}
                         </td>
-                        <td>{r.probability ? `${(r.probability * 100).toFixed(1)}%` : '-'}</td>
-                        <td>{r.risk_level && <span className={`risk-badge risk-${r.risk_level}`}>{r.risk_level}</span>}</td>
+                        <td>{typeof r.probability === 'number' ? `${(r.probability * 100).toFixed(1)}%` : '-'}</td>
+                        <td>{r.risk_level ? <span className={`risk-badge risk-${r.risk_level}`}>{r.risk_level}</span> : '-'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1220,7 +1252,7 @@ function DashboardTab({ dashboard }) {
         <div className="card-header"><div className="card-title">Risk Distribution</div></div>
         <div className="card-body">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-            {Object.entries(dashboard.risk_distribution).map(([level, count]) => (
+            {Object.entries(dashboard.risk_distribution || {}).map(([level, count]) => (
               <div key={level} style={{ textAlign: 'center', padding: '16px', background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
                 <div style={{
                   fontFamily: 'var(--font-mono)', fontSize: '24px', fontWeight: 800,
@@ -1243,7 +1275,8 @@ function HistoryTab({ history }) {
   if (!history) {
     return (<div className="inner-page"><div className="empty-state"><div className="empty-state-icon animate-pulse">...</div><div className="empty-state-text">Loading history...</div></div></div>)
   }
-  if (history.predictions.length === 0) {
+  const predictions = Array.isArray(history.predictions) ? history.predictions : []
+  if (predictions.length === 0) {
     return (<div className="inner-page"><div className="empty-state"><div className="empty-state-icon">...</div><div className="empty-state-text">No predictions yet</div><div className="empty-state-hint">Analyze profiles to build history</div></div></div>)
   }
 
@@ -1253,7 +1286,7 @@ function HistoryTab({ history }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
             <div className="inner-page-title">Prediction History</div>
-            <div className="inner-page-sub">{history.total} total predictions recorded</div>
+            <div className="inner-page-sub">{history.total ?? predictions.length} total predictions recorded</div>
           </div>
         </div>
       </div>
@@ -1268,7 +1301,7 @@ function HistoryTab({ history }) {
                 </tr>
               </thead>
               <tbody>
-                {history.predictions.map((p) => (
+                {predictions.map((p) => (
                   <tr key={p.id}>
                     <td style={{ color: 'var(--text-muted)' }}>{p.id}</td>
                     <td>
@@ -1277,16 +1310,16 @@ function HistoryTab({ history }) {
                       </span>
                     </td>
                     <td style={{ fontWeight: 600 }}>{p.username || '-'}</td>
-                    <td>{p.followers_count?.toLocaleString()}</td>
-                    <td>{p.following_count?.toLocaleString()}</td>
+                    <td>{p.followers_count != null ? Number(p.followers_count).toLocaleString() : '-'}</td>
+                    <td>{p.following_count != null ? Number(p.following_count).toLocaleString() : '-'}</td>
                     <td>
                       <span className={`badge ${p.prediction === 1 ? 'badge-fake' : 'badge-real'}`}>
                         {p.prediction === 1 ? 'Fake' : 'Real'}
                       </span>
                     </td>
-                    <td><span style={{ fontFamily: 'var(--font-mono)' }}>{(p.probability * 100).toFixed(1)}%</span></td>
-                    <td><span className={`risk-badge risk-${p.risk_level}`}>{p.risk_level}</span></td>
-                    <td style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{new Date(p.timestamp).toLocaleDateString()}</td>
+                    <td><span style={{ fontFamily: 'var(--font-mono)' }}>{typeof p.probability === 'number' ? `${(p.probability * 100).toFixed(1)}%` : '-'}</span></td>
+                    <td>{p.risk_level ? <span className={`risk-badge risk-${p.risk_level}`}>{p.risk_level}</span> : '-'}</td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{p.timestamp ? new Date(p.timestamp).toLocaleDateString() : '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1312,9 +1345,10 @@ function ModelTab({ modelInfo }) {
       </div>
 
       {Object.entries(modelInfo).map(([platformKey, info]) => {
+        if (!info || typeof info !== 'object') return null
         const bestResult = info.training_results?.[info.model_name]
-        const maxImp = info.feature_importance
-          ? Math.max(...Object.values(info.feature_importance))
+        const maxImp = info.feature_importance && Object.keys(info.feature_importance).length > 0
+          ? Math.max(...Object.values(info.feature_importance), 0.001)
           : 1
 
         return (

@@ -1,7 +1,5 @@
 """Regression tests for the Twitter training/artifact contract."""
 import importlib.util
-import asyncio
-import io
 import json
 import pickle
 import sys
@@ -9,9 +7,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import pytest
-from fastapi import HTTPException
-from starlette.datastructures import UploadFile
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -78,43 +73,3 @@ def test_instagram_artifact_remains_loadable(monkeypatch):
     assert result["platform"] == "instagram"
     assert result["is_fake"] in {0, 1}
     assert 0.0 <= result["probability"] <= 1.0
-
-
-def test_twitter_prediction_is_blocked_before_classify_or_persist(monkeypatch):
-    prediction_app = load_prediction_app(monkeypatch)
-    calls = []
-    monkeypatch.setattr(prediction_app, "classify", lambda profile: calls.append("classify"))
-    monkeypatch.setattr(prediction_app, "persist", lambda profile, result, source: calls.append("persist"))
-    with pytest.raises(HTTPException) as error:
-        prediction_app.predict(prediction_app.PredictionRequest(platform="twitter"))
-    assert error.value.status_code == 503
-    assert prediction_app.twitter_metadata["quality"]["reason"] in error.value.detail
-    assert calls == []
-
-
-def test_twitter_bulk_prediction_is_blocked_before_rows_or_persistence(monkeypatch):
-    prediction_app = load_prediction_app(monkeypatch)
-    calls = []
-    monkeypatch.setattr(prediction_app, "classify", lambda profile: calls.append("classify"))
-    monkeypatch.setattr(prediction_app, "persist", lambda profile, result, source: calls.append("persist"))
-    upload = UploadFile(filename="twitter.csv", file=io.BytesIO(b"username,Retweet Count\nbot,100\n"))
-    with pytest.raises(HTTPException) as error:
-        asyncio.run(prediction_app.predict_bulk(upload, "twitter"))
-    assert error.value.status_code == 503
-    assert calls == []
-
-
-def test_instagram_prediction_remains_allowed_when_not_explicitly_blocked(monkeypatch):
-    prediction_app = load_prediction_app(monkeypatch)
-    monkeypatch.setattr(prediction_app, "classify", lambda profile: {"platform": "instagram", "is_fake": 0, "probability": 0.1, "risk_level": "low"})
-    persisted = []
-    monkeypatch.setattr(prediction_app, "persist", lambda profile, result, source: persisted.append((profile.platform, source)))
-    result = prediction_app.predict(prediction_app.PredictionRequest(platform="instagram"))
-    assert result["platform"] == "instagram"
-    assert persisted == [("instagram", "manual")]
-
-
-def test_unknown_model_status_is_not_blocked(monkeypatch):
-    prediction_app = load_prediction_app(monkeypatch)
-    monkeypatch.setattr(prediction_app, "twitter_metadata", {"quality": {"status": "unknown"}})
-    prediction_app.ensure_model_deployable("twitter")

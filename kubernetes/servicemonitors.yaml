@@ -1,0 +1,71 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fakeguard-backend
+  namespace: default
+  labels:
+    release: monitoring
+    app: backend
+spec:
+  selector:
+    matchLabels:
+      app: backend
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 15s
+    scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fakeguard-prediction-service
+  namespace: default
+  labels:
+    release: monitoring
+    app: prediction-service
+spec:
+  selector:
+    matchLabels:
+      app: prediction-service
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 15s
+    scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fakeguard-history-service
+  namespace: default
+  labels:
+    release: monitoring
+    app: history-service
+spec:
+  selector:
+    matchLabels:
+      app: history-service
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 15s
+    scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fakeguard-analytics-service
+  namespace: default
+  labels:
+    release: monitoring
+    app: analytics-service
+spec:
+  selector:
+    matchLabels:
+      app: analytics-service
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 15s
+    scrapeTimeout: 10s

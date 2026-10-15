@@ -63,9 +63,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: history-service
+  labels: {app: history-service}
 spec:
   selector: {app: history-service}
-  ports: [{port: 8001, targetPort: 8001}]
+  ports: [{name: http, port: 8001, targetPort: 8001}]
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -82,6 +83,7 @@ spec:
       containers:
         - name: history-service
           image: seshaveni1/fakeguard-history:latest
+          imagePullPolicy: IfNotPresent
           ports: [{containerPort: 8001}]
           env:
             - name: DATABASE_URL
@@ -97,9 +99,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: prediction-service
+  labels: {app: prediction-service}
 spec:
   selector: {app: prediction-service}
-  ports: [{port: 8000, targetPort: 8000}]
+  ports: [{name: http, port: 8000, targetPort: 8000}]
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -116,6 +119,7 @@ spec:
       containers:
         - name: prediction-service
           image: seshaveni1/fakeguard-prediction:latest
+          imagePullPolicy: IfNotPresent
           ports: [{containerPort: 8000}]
           env: [{name: HISTORY_SERVICE_URL, value: http://history-service:8001}]
           resources:
@@ -139,9 +143,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: analytics-service
+  labels: {app: analytics-service}
 spec:
   selector: {app: analytics-service}
-  ports: [{port: 8002, targetPort: 8002}]
+  ports: [{name: http, port: 8002, targetPort: 8002}]
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -158,6 +163,7 @@ spec:
       containers:
         - name: analytics-service
           image: seshaveni1/fakeguard-analytics:latest
+          imagePullPolicy: IfNotPresent
           ports: [{containerPort: 8002}]
           env: [{name: HISTORY_SERVICE_URL, value: http://history-service:8001}]
           resources:

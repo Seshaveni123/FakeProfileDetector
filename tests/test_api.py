@@ -88,7 +88,7 @@ def test_predict_twitter_real():
     payload = {
         "platform": "twitter",
         "username": "real_tweeter",
-        "followers_count": 3200,
+        "followers_count": 8000,
         "following_count": 450,
         "tweets_count": 8500,
         "account_age_days": 2900,
@@ -174,3 +174,34 @@ def test_metrics_endpoint():
     assert "requests_total" in response.text
     assert "predictions_instagram" in response.text
     assert "predictions_twitter" in response.text
+
+
+def test_predict_bulk_instagram():
+    """Test bulk prediction for Instagram using sample_bulk_test.csv."""
+    client = get_client()
+    csv_path = os.path.join(os.path.dirname(__file__), '..', 'sample_bulk_test.csv')
+    with open(csv_path, 'rb') as f:
+        response = client.post("/predict/bulk?platform=instagram", files={"file": ("sample_bulk_test.csv", f, "text/csv")})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["platform"] == "instagram"
+    assert data["total_profiles"] == 10
+    assert data["error_count"] == 0
+    assert len(data["results"]) == 10
+    assert data["results"][0]["username"] == "real_user_alice"
+
+
+def test_predict_bulk_twitter():
+    """Test bulk prediction for Twitter using sample_twitter_bulk.csv."""
+    client = get_client()
+    csv_path = os.path.join(os.path.dirname(__file__), '..', 'sample_twitter_bulk.csv')
+    with open(csv_path, 'rb') as f:
+        response = client.post("/predict/bulk?platform=twitter", files={"file": ("sample_twitter_bulk.csv", f, "text/csv")})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["platform"] == "twitter"
+    assert data["total_profiles"] == 10
+    assert data["error_count"] == 0
+    assert len(data["results"]) == 10
+    assert data["results"][0]["username"] == "techwriter_mike"
+

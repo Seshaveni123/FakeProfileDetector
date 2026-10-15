@@ -27,7 +27,7 @@ spec:
   rules:
   - http:
       paths:
-      - path: /api/(predict(?:/.*)?|model-info|metrics)
+      - path: /api/(predict(?:/.*)?|model-info)
         pathType: ImplementationSpecific
         backend:
           service:
