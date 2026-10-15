@@ -125,9 +125,6 @@ pipeline {
         }
 
         stage('Publish to Docker Hub') {
-            when {
-                expression { return params.PUSH_TO_REGISTRY == null || params.PUSH_TO_REGISTRY.toBoolean() == true }
-            }
             steps {
                 echo "=========================================================="
                 echo "Stage 5: Publish Application Images to Docker Hub (${DOCKER_REGISTRY})"
