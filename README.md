@@ -721,4 +721,3 @@ When running the application locally at `http://localhost:5173`, the React web a
 - **Academic / Portfolio Submission**: Developed as a comprehensive cloud-native machine learning and DevOps capstone project demonstrating end-to-end full-stack engineering, microservice decomposition, CI/CD automation, and Kubernetes orchestration.
 
 ---
-*FakeGuard AI is maintained for academic and educational evaluation.*
