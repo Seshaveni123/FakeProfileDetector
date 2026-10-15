@@ -11,5 +11,10 @@ if [ -f /var/jenkins_home/.kube/config ]; then
     chown -R jenkins:jenkins /var/jenkins_home/.kube 2>/dev/null || true
 fi
 
+# Ensure git safe directory is configured for all workspaces
+git config --global --add safe.directory '*' 2>/dev/null || true
+su -s /bin/bash jenkins -c "git config --global --add safe.directory '*'" 2>/dev/null || true
+
+
 # Execute the default Jenkins entrypoint
 exec /usr/bin/tini -- /usr/local/bin/jenkins.sh "$@"

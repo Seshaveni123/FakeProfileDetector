@@ -84,7 +84,7 @@ pipeline {
                 echo "=========================================================="
                 sh '''
                     echo "--- Running Backend Unit & Service Tests ---"
-                    pytest tests/ -v -k "not test_microservices_e2e"
+                    pytest tests/ -v --ignore=tests/test_microservices_e2e.py
 
                     echo "--- Validating Frontend Assets & Configuration ---"
                     test -f frontend/package.json || { echo "ERROR: frontend/package.json missing"; exit 1; }
