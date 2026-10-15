@@ -1,0 +1,178 @@
+# Create the fakeguard-database Secret before applying this file; see services/README.md.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fakeguard-postgres-data
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: postgres}
+  template:
+    metadata:
+      labels: {app: postgres}
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports: [{containerPort: 5432}]
+          env:
+            - name: POSTGRES_DB
+              valueFrom: {secretKeyRef: {name: fakeguard-database, key: database}}
+            - name: POSTGRES_USER
+              valueFrom: {secretKeyRef: {name: fakeguard-database, key: username}}
+            - name: POSTGRES_PASSWORD
+              valueFrom: {secretKeyRef: {name: fakeguard-database, key: password}}
+          resources:
+            requests: {cpu: "100m", memory: "256Mi"}
+            limits: {cpu: "500m", memory: "512Mi"}
+          readinessProbe:
+            tcpSocket: {port: 5432}
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket: {port: 5432}
+            periodSeconds: 15
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: fakeguard-postgres-data}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: history-service
+spec:
+  selector: {app: history-service}
+  ports: [{port: 8001, targetPort: 8001}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: history-service-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: history-service}
+  template:
+    metadata:
+      labels: {app: history-service}
+    spec:
+      containers:
+        - name: history-service
+          image: seshaveni1/fakeguard-history:latest
+          ports: [{containerPort: 8001}]
+          env:
+            - name: DATABASE_URL
+              valueFrom: {secretKeyRef: {name: fakeguard-database, key: url}}
+          resources:
+            requests: {cpu: "100m", memory: "128Mi"}
+            limits: {cpu: "500m", memory: "512Mi"}
+          startupProbe: {httpGet: {path: /, port: 8001}, periodSeconds: 5, failureThreshold: 12}
+          readinessProbe: {httpGet: {path: /, port: 8001}, periodSeconds: 10, failureThreshold: 3}
+          livenessProbe: {httpGet: {path: /, port: 8001}, periodSeconds: 15, failureThreshold: 3}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prediction-service
+spec:
+  selector: {app: prediction-service}
+  ports: [{port: 8000, targetPort: 8000}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prediction-service-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: prediction-service}
+  template:
+    metadata:
+      labels: {app: prediction-service}
+    spec:
+      containers:
+        - name: prediction-service
+          image: seshaveni1/fakeguard-prediction:latest
+          ports: [{containerPort: 8000}]
+          env: [{name: HISTORY_SERVICE_URL, value: http://history-service:8001}]
+          resources:
+            requests: {cpu: "500m", memory: "1Gi"}
+            limits: {cpu: "1", memory: "2Gi"}
+          startupProbe: {httpGet: {path: /, port: 8000}, periodSeconds: 5, failureThreshold: 24}
+          readinessProbe: {httpGet: {path: /, port: 8000}, periodSeconds: 10, failureThreshold: 3}
+          livenessProbe: {httpGet: {path: /, port: 8000}, periodSeconds: 15, failureThreshold: 3}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: prediction-service-hpa
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: prediction-service-deployment}
+  minReplicas: 2
+  maxReplicas: 5
+  metrics: [{type: Resource, resource: {name: cpu, target: {type: Utilization, averageUtilization: 70}}}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service
+spec:
+  selector: {app: analytics-service}
+  ports: [{port: 8002, targetPort: 8002}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: analytics-service}
+  template:
+    metadata:
+      labels: {app: analytics-service}
+    spec:
+      containers:
+        - name: analytics-service
+          image: seshaveni1/fakeguard-analytics:latest
+          ports: [{containerPort: 8002}]
+          env: [{name: HISTORY_SERVICE_URL, value: http://history-service:8001}]
+          resources:
+            requests: {cpu: "100m", memory: "128Mi"}
+            limits: {cpu: "500m", memory: "512Mi"}
+          startupProbe: {httpGet: {path: /, port: 8002}, periodSeconds: 5, failureThreshold: 12}
+          readinessProbe: {httpGet: {path: /, port: 8002}, periodSeconds: 10, failureThreshold: 3}
+          livenessProbe: {httpGet: {path: /, port: 8002}, periodSeconds: 15, failureThreshold: 3}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: analytics-service-hpa
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: analytics-service-deployment}
+  minReplicas: 2
+  maxReplicas: 5
+  metrics: [{type: Resource, resource: {name: cpu, target: {type: Utilization, averageUtilization: 70}}}]

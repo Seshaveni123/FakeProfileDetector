@@ -22,6 +22,27 @@ spec:
 
         ports:
         - containerPort: 5173
+        startupProbe:
+          httpGet:
+            path: /
+            port: 5173
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 12
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5173
+          periodSeconds: 15
+          timeoutSeconds: 2
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5173
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
 
         resources:
           requests:

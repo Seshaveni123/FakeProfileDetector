@@ -17,6 +17,27 @@ spec:
         image: seshaveni1/fakeguard-backend:latest
         ports:
         - containerPort: 8000
+        startupProbe:
+          httpGet:
+            path: /
+            port: 8000
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 12
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          periodSeconds: 15
+          timeoutSeconds: 2
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
         resources:
           requests:
             cpu: "200m"
