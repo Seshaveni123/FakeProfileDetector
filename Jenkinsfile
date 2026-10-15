@@ -129,34 +129,36 @@ pipeline {
                 echo "=========================================================="
                 echo "Stage 5: Publish Application Images to Docker Hub (${DOCKER_REGISTRY})"
                 echo "=========================================================="
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh '''
-                        echo "Authenticating with Docker Hub as user: ${DOCKER_USER}..."
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                retry(3) {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                        sh '''
+                            echo "Authenticating with Docker Hub as user: ${DOCKER_USER}..."
+                            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
 
-                        echo "Publishing [1/4] Prediction Service (${PREDICTION_IMAGE})..."
-                        docker push ${PREDICTION_IMAGE}:${IMAGE_TAG}
-                        docker push ${PREDICTION_IMAGE}:latest
+                            echo "Publishing [1/4] Prediction Service (${PREDICTION_IMAGE})..."
+                            docker push ${PREDICTION_IMAGE}:${IMAGE_TAG}
+                            docker push ${PREDICTION_IMAGE}:latest
 
-                        echo "Publishing [2/4] History Service (${HISTORY_IMAGE})..."
-                        docker push ${HISTORY_IMAGE}:${IMAGE_TAG}
-                        docker push ${HISTORY_IMAGE}:latest
+                            echo "Publishing [2/4] History Service (${HISTORY_IMAGE})..."
+                            docker push ${HISTORY_IMAGE}:${IMAGE_TAG}
+                            docker push ${HISTORY_IMAGE}:latest
 
-                        echo "Publishing [3/4] Analytics Service (${ANALYTICS_IMAGE})..."
-                        docker push ${ANALYTICS_IMAGE}:${IMAGE_TAG}
-                        docker push ${ANALYTICS_IMAGE}:latest
+                            echo "Publishing [3/4] Analytics Service (${ANALYTICS_IMAGE})..."
+                            docker push ${ANALYTICS_IMAGE}:${IMAGE_TAG}
+                            docker push ${ANALYTICS_IMAGE}:latest
 
-                        echo "Publishing [4/4] Frontend Service (${FRONTEND_IMAGE})..."
-                        docker push ${FRONTEND_IMAGE}:${IMAGE_TAG}
-                        docker push ${FRONTEND_IMAGE}:latest
+                            echo "Publishing [4/4] Frontend Service (${FRONTEND_IMAGE})..."
+                            docker push ${FRONTEND_IMAGE}:${IMAGE_TAG}
+                            docker push ${FRONTEND_IMAGE}:latest
 
-                        docker logout
-                        echo "All 4 FakeGuard AI application images successfully published to Docker Hub."
-                    '''
+                            docker logout
+                            echo "All 4 FakeGuard AI application images successfully published to Docker Hub."
+                        '''
+                    }
                 }
             }
         }
