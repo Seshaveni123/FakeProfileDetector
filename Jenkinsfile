@@ -8,8 +8,7 @@ pipeline {
 
     parameters {
         booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Execute automated backend and frontend tests')
-        booleanParam(name: 'BUILD_LEGACY_BACKEND', defaultValue: false, description: 'Also build legacy backend monolithic image')
-        booleanParam(name: 'PUSH_TO_REGISTRY', defaultValue: false, description: 'Push built Docker images to Docker Hub registry')
+        booleanParam(name: 'PUSH_TO_REGISTRY', defaultValue: true, description: 'Publish built application Docker images to Docker Hub registry')
         booleanParam(name: 'DEPLOY_TO_K8S', defaultValue: true, description: 'Deploy application manifests to Kubernetes cluster')
         string(name: 'K8S_NAMESPACE', defaultValue: 'fakeguard', description: 'Target Kubernetes namespace for deployment')
     }
@@ -101,93 +100,66 @@ pipeline {
                 sh '''
                     echo "Building [1/4] Prediction Service (Port 8000)..."
                     docker build -t ${PREDICTION_IMAGE}:${IMAGE_TAG} \
-                                 -t ${PREDICTION_IMAGE}:${GIT_COMMIT_SHORT} \
                                  -t ${PREDICTION_IMAGE}:latest \
                                  -f services/prediction-service/Dockerfile .
 
                     echo "Building [2/4] History Service (Port 8001)..."
                     docker build -t ${HISTORY_IMAGE}:${IMAGE_TAG} \
-                                 -t ${HISTORY_IMAGE}:${GIT_COMMIT_SHORT} \
                                  -t ${HISTORY_IMAGE}:latest \
                                  -f services/history-service/Dockerfile .
 
                     echo "Building [3/4] Analytics Service (Port 8002)..."
                     docker build -t ${ANALYTICS_IMAGE}:${IMAGE_TAG} \
-                                 -t ${ANALYTICS_IMAGE}:${GIT_COMMIT_SHORT} \
                                  -t ${ANALYTICS_IMAGE}:latest \
                                  -f services/analytics-service/Dockerfile .
 
                     echo "Building [4/4] Frontend Service (Port 5173)..."
                     docker build -t ${FRONTEND_IMAGE}:${IMAGE_TAG} \
-                                 -t ${FRONTEND_IMAGE}:${GIT_COMMIT_SHORT} \
                                  -t ${FRONTEND_IMAGE}:latest \
                                  ./frontend
-                '''
-                script {
-                    if (params.BUILD_LEGACY_BACKEND.toBoolean() == true) {
-                        sh '''
-                            echo "Building Optional Legacy Backend Monolith..."
-                            docker build -t ${BACKEND_IMAGE}:${IMAGE_TAG} \
-                                         -t ${BACKEND_IMAGE}:${GIT_COMMIT_SHORT} \
-                                         -t ${BACKEND_IMAGE}:latest \
-                                         ./backend
-                        '''
-                    }
-                }
-                sh '''
+
                     echo "--- Built Images Summary ---"
                     docker images --filter "reference=${DOCKER_REGISTRY}/fakeguard*"
                 '''
             }
         }
 
-        stage('Docker Registry Push') {
+        stage('Publish to Docker Hub') {
             when {
-                expression { return params.PUSH_TO_REGISTRY.toBoolean() == true }
+                expression { return params.PUSH_TO_REGISTRY == null || params.PUSH_TO_REGISTRY.toBoolean() == true }
             }
             steps {
                 echo "=========================================================="
-                echo "Stage 5: Push Images to Docker Registry"
+                echo "Stage 5: Publish Application Images to Docker Hub (${DOCKER_REGISTRY})"
                 echo "=========================================================="
-                script {
-                    try {
-                        withCredentials([usernamePassword(
-                            credentialsId: 'dockerhub',
-                            usernameVariable: 'DOCKER_USER',
-                            passwordVariable: 'DOCKER_PASS'
-                        )]) {
-                            sh '''
-                                echo "Authenticating with Docker Hub as ${DOCKER_USER}..."
-                                echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo "Authenticating with Docker Hub as user: ${DOCKER_USER}..."
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
 
-                                echo "Pushing Prediction Service images..."
-                                docker push ${PREDICTION_IMAGE}:${IMAGE_TAG}
-                                docker push ${PREDICTION_IMAGE}:${GIT_COMMIT_SHORT}
-                                docker push ${PREDICTION_IMAGE}:latest
+                        echo "Publishing [1/4] Prediction Service (${PREDICTION_IMAGE})..."
+                        docker push ${PREDICTION_IMAGE}:${IMAGE_TAG}
+                        docker push ${PREDICTION_IMAGE}:latest
 
-                                echo "Pushing History Service images..."
-                                docker push ${HISTORY_IMAGE}:${IMAGE_TAG}
-                                docker push ${HISTORY_IMAGE}:${GIT_COMMIT_SHORT}
-                                docker push ${HISTORY_IMAGE}:latest
+                        echo "Publishing [2/4] History Service (${HISTORY_IMAGE})..."
+                        docker push ${HISTORY_IMAGE}:${IMAGE_TAG}
+                        docker push ${HISTORY_IMAGE}:latest
 
-                                echo "Pushing Analytics Service images..."
-                                docker push ${ANALYTICS_IMAGE}:${IMAGE_TAG}
-                                docker push ${ANALYTICS_IMAGE}:${GIT_COMMIT_SHORT}
-                                docker push ${ANALYTICS_IMAGE}:latest
+                        echo "Publishing [3/4] Analytics Service (${ANALYTICS_IMAGE})..."
+                        docker push ${ANALYTICS_IMAGE}:${IMAGE_TAG}
+                        docker push ${ANALYTICS_IMAGE}:latest
 
-                                echo "Pushing Frontend Service images..."
-                                docker push ${FRONTEND_IMAGE}:${IMAGE_TAG}
-                                docker push ${FRONTEND_IMAGE}:${GIT_COMMIT_SHORT}
-                                docker push ${FRONTEND_IMAGE}:latest
+                        echo "Publishing [4/4] Frontend Service (${FRONTEND_IMAGE})..."
+                        docker push ${FRONTEND_IMAGE}:${IMAGE_TAG}
+                        docker push ${FRONTEND_IMAGE}:latest
 
-                                docker logout
-                                echo "All images pushed successfully to Docker Hub."
-                            '''
-                        }
-                    } catch (Exception e) {
-                        echo "WARNING: Docker Hub credentials 'dockerhub' not configured or failed to push: ${e.message}"
-                        echo "Skipping push to keep pipeline progressing."
-                    }
+                        docker logout
+                        echo "All 4 FakeGuard AI application images successfully published to Docker Hub."
+                    '''
                 }
             }
         }
