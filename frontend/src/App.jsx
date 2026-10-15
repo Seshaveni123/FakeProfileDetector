@@ -284,11 +284,14 @@ export default function App() {
         body: formData,
       })
 
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data.detail || 'Bulk upload failed')
+      }
       setBulkResults(data)
       addToast(`Processed ${data.total_profiles} ${platform} profiles!`)
     } catch (err) {
-      addToast('Bulk upload failed.', 'error')
+      addToast(err.message || 'Bulk upload failed.', 'error')
     } finally {
       setLoading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
