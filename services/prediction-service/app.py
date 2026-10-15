@@ -75,6 +75,15 @@ class PredictionRequest(BaseModel):
     verified: Optional[int] = 0
 
 
+def ensure_model_deployable(platform: Literal["instagram", "twitter"]) -> None:
+    """Reject requests for a model explicitly marked unsafe for deployment."""
+    metadata = insta_metadata if platform == "instagram" else twitter_metadata
+    quality = metadata.get("quality", {})
+    if quality.get("status") == "not_deployable":
+        reason = quality.get("reason") or f"The {platform} model is not deployable and cannot produce reliable predictions."
+        raise HTTPException(status_code=503, detail=reason)
+
+
 @app.middleware("http")
 async def track_metrics(request: Request, call_next):
     started = time.time()
@@ -161,6 +170,7 @@ def health():
 
 @app.post("/predict")
 def predict(profile: PredictionRequest):
+    ensure_model_deployable(profile.platform)
     result = classify(profile)
     persist(profile, result, "manual")
     return result
@@ -170,6 +180,7 @@ def predict(profile: PredictionRequest):
 async def predict_bulk(file: UploadFile = File(...), platform: Literal["instagram", "twitter"] = "instagram"):
     if not file.filename or not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are accepted")
+    ensure_model_deployable(platform)
     metrics["bulk_uploads_total"] += 1
     results = []
     for index, row in enumerate(csv.DictReader(io.StringIO((await file.read()).decode("utf-8")))):
