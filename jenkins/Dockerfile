@@ -28,7 +28,7 @@ RUN groupadd -f -g 999 docker && usermod -aG docker jenkins
 
 # Pre-install Python test dependencies for fast pipeline execution
 RUN python3 -m venv /opt/venv && \
-    /opt/venv/bin/pip install --no-cache-dir pytest pytest-asyncio httpx requests fastapi pydantic scikit-learn pandas numpy && \
+    /opt/venv/bin/pip install --no-cache-dir pytest pytest-asyncio httpx requests xgboost python-multipart fastapi pydantic scikit-learn pandas numpy && \
     chmod -R 777 /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
